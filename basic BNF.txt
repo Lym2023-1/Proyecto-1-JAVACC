@@ -1,0 +1,26 @@
+ROBOT_R
+[VARS token +{, token} ;]
+
+
+instruccion_call =  token(proc) + token(:)  ( lambda |  token +{, token}) 
+ 
+
+
+
+while_dec = token(while) + token(:)  + token (condicional) + token (:)   ( lambda |  token +{, token}) + token(do)+ token (:) "["  (instruction_call | while_dec | if_dec | repeat_dec )+ {; + (instruction_call | while_dec | if_dec | repeat_dec )}    "]"
+if_dec = token(if) + token(:)  + token (condicional) + token (:)   ( lambda |  token +{, token}) + token(then)+ token (:) "["  (instruction_call | while_dec | if_dec | repeat_dec )+ {; + (instruction_call | while_dec | if_dec | repeat_dec )}    "]" token(else)+ token (:) "["  (instruction_call | while_dec | if_dec | repeat_dec )+ {; + (instruction_call | while_dec | if_dec | repeat_dec)}    "]"
+repeat_dec =  token(repeat) + token(:) + token(num) + "["  (instruction_call | while_dec | if_dec | repeat_dec )+ {; + (instruction_call | while_dec | if_dec | repeat_dec)}    "]"
+
+
+
+single_proc = token "["  "|"  ( lambda  |token +{, token}) "|"       (instruction_call | while_dec | if_dec | repeat_dec )+ {; + (instruction_call | while_dec | if_dec | repeat_dec )   "]" 
+
+
+[PROCS   single_proc  + {single_proc}  ]
+
+
+instructions = ("[" + (instruction_call | while_dec | if_dec | repeat_dec )+ {; + (instruction_call | while_dec | if_dec | repeat_dec )   "]" |     (instruction_call | while_dec | if_dec | repeat_dec ))
+
+
+grammar = vars + procs + instructions
+
