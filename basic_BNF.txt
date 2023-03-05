@@ -1,7 +1,6 @@
 
-
 void parameters(){
-	( lambda |  TOKEN + {, TOKEN})
+	lambda |  (TOKEN + (, TOKEN)*))
 }
 
 
@@ -16,12 +15,12 @@ void conditionalCall(){
 
 
 void singleExecution(){
-	(instruction_call() | while() | if() | repeat() )
+	instruction_call() | while() | if() | repeat() 
 }
 
 
 void multipleExecution(){
-	singleExecution() + { ";" + singleExecution()} 
+	singleExecution() + ( ";" + singleExecution())* 
 	
 }
 
@@ -43,7 +42,7 @@ void procs(){
 
 
 void vars(){
-	VARS name {"," name} ";"
+	VARS name ("," name())* ";"
 }
 
 
@@ -65,5 +64,5 @@ void if() {
 
 
 void main(){
-	ROBOT_R [vars()] [procs()] +  block()
+	ROBOT_R vars()? procs()? +  block()
 }
