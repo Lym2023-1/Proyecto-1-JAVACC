@@ -1,0 +1,69 @@
+
+
+void parameters(){
+	( lambda |  TOKEN + {, TOKEN})
+}
+
+
+void instructionCall(){
+	<INSTRUCTIONS> ":"  parameters()
+}
+
+
+void conditionalCall(){
+	<CONDITIONAL> ":"  parameters()
+}
+
+
+void singleExecution(){
+	(instruction_call() | while() | if() | repeat() )
+}
+
+
+void multipleExecution(){
+	singleExecution() + { ";" + singleExecution()} 
+	
+}
+
+
+void block(){
+	("[" singleExecution() "]") | (singleExecution())
+}
+
+
+
+void procDefinition(){
+	name() "[" "|" parameters() "|" multipleExecution() "]"
+}
+
+
+void procs(){
+	PROCS procDefinition()+
+}
+
+
+void vars(){
+	VARS name {"," name} ";"
+}
+
+
+void while(){
+
+	<WHILE> ":" conditionalCall() <DO> ":" block()
+
+}
+
+
+void repeat(){
+	<REPEAT> ":" num() block()
+} 
+
+void if() {
+
+	<IF> ":" conditionalCall() <THEN> ":"  block() <ELSE> ":" block()
+}
+
+
+void main(){
+	ROBOT_R [vars()] [procs()] +  block()
+}
