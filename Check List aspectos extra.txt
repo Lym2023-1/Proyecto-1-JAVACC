@@ -1,0 +1,6 @@
+Check List aspectos extra
+
+-Las variables deben ser alfanuméricas pero deben empezar con una letra, o sea c5 es válido y 5c no
+-Se debe revisar el Scope
+-Guardar variables y procedimientos
+-Verificar canntidad de parametros
