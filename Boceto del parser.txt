@@ -1,0 +1,130 @@
+TOKEN:
+//Adaptar a la estructura
+<NAME=<LETTER>(<LETTER>|<DIGIT>)*> 
+<#LETTER=[a-z,A-Z]>
+<INT = [1-9]<DIGIT>*>
+<#DIGIT=[0-9]>
+
+
+
+void main()
+	{}
+	{
+	"ROBOT_R" vars()? procs()? +  block()
+	}
+
+
+void vars()
+	{}
+	{
+	"VARS" var1=<NAME> ("," var2=<NAME>)* ";"
+	{//Se añaden las variables a una estructura global}
+	}
+
+
+void procs()
+	{}
+	{
+	PROCS procDefinition()+
+	}
+
+
+void procDefinition()
+	{}
+	{
+	procName=<NAME> "[" "|" parameters() "|" multipleExecution() "]"
+	{//Se guarda el nombre del procedimiento y se revisa que no sea variable ni condicion}
+	{//Se revisa en las ejecuciones que las variables esten definidas como VARS o como parametros}
+	}
+
+
+
+void block()
+	{}
+	{
+	("[" multipleExecution() "]") | (singleExecution())
+	}
+
+
+void multipleExecution()
+	{}
+	{
+	singleExecution() + ( ";" + singleExecution())* 
+	}
+
+
+void singleExecution()
+	{}
+	{
+	instruction_call() | while() | if() | repeat() 
+	}
+
+
+void instructionCall()
+	{}
+	{
+	CheckInstructions() ":"  parameters()
+	{//Aqui se comprueba que los parametros y las funciones esten definidos}
+	}
+
+
+void conditionalCall()	
+	{}
+	{
+	CheckConditionals() ":"  parameters()
+	{//Aqui se comprueba que los parametros y las condiciones esten definidos}
+	}
+
+
+void parameters()
+	{}
+	{
+	(parameter1= NAME + (, parameter2=TOKEN)*))? 
+	{//Aqui se añade el parametro a una estructura temporal} 
+	{//toca revisar que una variable, condicional o procedimiento no tengan el mismo nombre} 	
+	}
+
+
+
+
+
+void while()
+	{}
+	{
+	<WHILE> ":" conditionalCall() <DO> ":" block()
+	}
+
+
+void repeat()
+	{}
+	{
+	<REPEAT> ":" <INT> block()
+	} 
+
+void if() 
+	{}
+	{
+	<IF> ":" conditionalCall() <THEN> ":"  block() <ELSE> ":" block()
+	}
+
+
+
+void CheckInstructions():
+	{}
+	{
+	//Se consume el token y se revisa que la instruccion exista
+	}
+
+
+
+void CheckConditionals():
+	{}
+	{
+	//Se consume el token y se revisa que la instruccion exista
+	}
+
+
+
+
+
+ 
