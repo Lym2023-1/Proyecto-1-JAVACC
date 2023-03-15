@@ -5,3 +5,4 @@ Check List aspectos extra
 -Guardar variables y procedimientos
 -Si se guarda algo, no debe pertenecer a varios grupos
 -Verificar canntidad de parametros
+-Anidar not
