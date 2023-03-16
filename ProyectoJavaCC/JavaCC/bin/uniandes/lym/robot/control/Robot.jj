@@ -31,6 +31,7 @@ import java.awt.Point;
 import java.io.*;
 import java.util.Vector;
 import java.util.LinkedList;
+import java.util.ArrayList;
 
 @SuppressWarnings("serial")
 public class Robot 
@@ -39,13 +40,19 @@ public class Robot
 
 	private RobotWorldDec world;
 	
+void main()
+	{}
+	{
+	"ROBOT_R" vars()? procs()? +  block()
+	}
 	
-	void setWorld(RobotWorld w) {
+	
+	/*void setWorld(RobotWorld w) {
 		world = (RobotWorldDec) w;	
 	}
 
 	String salida=new String();
-}
+}*/
 PARSER_END(Robot)
 
 SKIP:
@@ -79,8 +86,9 @@ TOKEN:
 
 
 TOKEN :
-{
-		<NUM: (<DIGIT>)+ >
+{		<NAME=<LETTER>(<LETTER>|<DIGIT>)*> 
+		| <#LETTER=[a-z,A-Z]>
+		| <NUM: (<DIGIT>)+ >
 		|  	<#DIGIT: ["0"-"9"] >
         
 }
@@ -95,6 +103,145 @@ TOKEN:  /* Palabras reservadas*/
 		|	<VARS:   "vars"  >
 
 }
+ArrayList< String > vars():
+	{ArrayList< String > listaVariables;}
+	{
+	"VARS" var1=<NAME>{listaVariables.add(var1) }
+	("," var2=<NAME> {listaVariables.add(var2) })* ";"
+	{return listaVariables;
+	}
+void procs()
+	{}
+	{
+	"PROCS" procDefinition()+
+	}
+String procDefinition()
+	{}
+	{
+	procName=<NAME> "[" "|" parameters() "|" multipleExecution() "]"
+	{//Se guarda el nombre del procedimiento y se revisa que no sea variable ni condicion}
+	{//Se revisa en las ejecuciones que las variables esten definidas como VARS o como parametros}
+	return procName;
+	  }
+void block()
+	{}
+	{
+	("[" multipleExecution() "]") | (singleExecution())
+	}
+void multipleExecution()
+	{}
+	{
+	singleExecution() + ( ";" + singleExecution())* 
+	}
+
+
+void singleExecution()
+	{}
+	{
+	command()|controlStructure()|procedureCall()
+	}
+void procedureCall()
+	{}
+	{
+	< NAME > ":" parameters()
+	}
+void controlStructure():
+{
+}
+{ if() |while() | repeat()
+}
+
+void if():
+	{}
+	{
+	<IF> ":" conditionalCall() <THEN> ":"  block() <ELSE> ":" block()
+	}
+
+void while():
+	{}
+	{
+	<WHILE> ":" conditionalCall() <DO> ":" block()
+	}
+
+
+void repeat():
+	{}
+	{
+	<REPEAT> ":" <INT> block()
+	} 
+
+
+
+void instructionCall()
+	{}
+	{
+	CheckInstructions() ":"  parameters()
+	{//Aqui se comprueba que los parametros y las funciones esten definidos}
+	}
+
+void conditionalCall():	
+	{}
+	{
+	facing()
+	|canPut()
+	|canPick()
+	|canMoveInDir()
+	|canJumpInDir()
+	|canMoveToThe()
+	|canJumpToThe()
+	|not()
+	{//Aqui se comprueba que los parametros y las condiciones esten definidos}
+	}
+
+
+void facing():
+{}
+{"facing" ":" zero()
+  }
+
+//se ponen el resto de condiciones en un formato similar a facing()
+void zero():
+{
+}
+{"north" | "south" | "east" |"weast"
+
+}
+
+
+
+void parameters()
+	{}
+	{
+	(parameter1= NAME + (, parameter2=TOKEN)*))? 
+	{//Aqui se añade el parametro a una estructura temporal} 
+	{//toca revisar que una variable, condicional o procedimiento no tengan el mismo nombre} 	
+	}
+
+
+
+
+
+void CheckInstructions():
+	{}
+	{
+	//Se consume el token y se revisa que la instruccion exista
+	}
+
+
+
+void CheckConditionals():
+	{}
+	{
+	//Se consume el token y se revisa que la instruccion exista
+	}
+
+
+
+
+
+
+
+
 
 
 
@@ -109,7 +256,8 @@ TOKEN:  /* Palabras reservadas*/
 
 	
 	{
-		(		  (
+		(
+		  (
 		   <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
 		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
 		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
@@ -189,4 +337,3 @@ TOKEN:  /* Palabras reservadas*/
 		}
 	}
 
-	
