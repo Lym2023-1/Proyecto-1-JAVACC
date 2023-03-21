@@ -7,6 +7,12 @@
 Aun en desarrollo.
 
 ## Comentarios entrega
+
+### Uso
+La carpeta ParserTesterClean incluye el archivo newparser.jj, el cual sirve para ejecutar el parser sin usar el robot
+
+
+### Decisiones
 En el enunciado hay una inconsistencia con: canMoveToThe
 Se explica que su sintaxis es de la forma: canMoveToThe: n ,O – where O is one of: front, right, left, or back
 Sin embargo, en el ejemplo sale: while : canMovetoThe : 1 , north do
