@@ -39,50 +39,50 @@ public class Robot implements RobotConstants {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case RIGHT:
           jj_consume_token(RIGHT);
-          jj_consume_token(21);
-          jj_consume_token(22);
+          jj_consume_token(30);
+          jj_consume_token(31);
                                     world.turnRight();salida = "Command: Turnright";
           break;
         case MOV:
           jj_consume_token(MOV);
-          jj_consume_token(21);
+          jj_consume_token(30);
           x = num();
-          jj_consume_token(22);
+          jj_consume_token(31);
                                                 world.moveForward(x,false);salida = "Command: Moveforward ";
           break;
         case HOP:
           jj_consume_token(HOP);
-          jj_consume_token(21);
+          jj_consume_token(30);
           x = num();
-          jj_consume_token(22);
+          jj_consume_token(31);
                                                 world.moveForward(x,true);salida = "Command:Jumpforward ";
           break;
         case GO:
           jj_consume_token(GO);
-          jj_consume_token(21);
+          jj_consume_token(30);
           x = num();
-          jj_consume_token(23);
+          jj_consume_token(32);
           y = num();
-          jj_consume_token(22);
+          jj_consume_token(31);
                                                           world.setPostion(x,y);salida = "Command:GO ";
           break;
         case PUT:
           jj_consume_token(PUT);
-          jj_consume_token(21);
+          jj_consume_token(30);
           put();
-          jj_consume_token(22);
+          jj_consume_token(31);
           break;
         case PICK:
           jj_consume_token(PICK);
-          jj_consume_token(21);
+          jj_consume_token(30);
           get();
-          jj_consume_token(22);
+          jj_consume_token(31);
           break;
         case POP:
           jj_consume_token(POP);
-          jj_consume_token(21);
+          jj_consume_token(30);
           x = num();
-          jj_consume_token(22);
+          jj_consume_token(31);
                                         world.popBalloons(x); salida = "Comando:  Pop";
           break;
         default:
@@ -90,7 +90,7 @@ public class Robot implements RobotConstants {
           jj_consume_token(-1);
           throw new ParseException();
         }
-        jj_consume_token(24);
+        jj_consume_token(33);
                     try {
                                  Thread.sleep(900);
                     } catch (InterruptedException e) {
@@ -132,13 +132,13 @@ public class Robot implements RobotConstants {
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case CHIPS:
       jj_consume_token(CHIPS);
-      jj_consume_token(23);
+      jj_consume_token(32);
       f = num();
                                           world.putChips(f); salida = "Command:  Put Chips";
       break;
     case BALLOONS:
       jj_consume_token(BALLOONS);
-      jj_consume_token(23);
+      jj_consume_token(32);
       f = num();
                                                       world.putBalloons(f); salida = "Command:  Put Balloons";
       break;
@@ -154,13 +154,13 @@ public class Robot implements RobotConstants {
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case CHIPS:
       jj_consume_token(CHIPS);
-      jj_consume_token(23);
+      jj_consume_token(32);
       f = num();
                                          world.pickChips(f);salida = "Command:  Pick chips";
       break;
     case BALLOONS:
       jj_consume_token(BALLOONS);
-      jj_consume_token(23);
+      jj_consume_token(32);
       f = num();
                                                       world.grabBalloons(f);salida="Command:  Pick balloons";
       break;
@@ -171,11 +171,615 @@ public class Robot implements RobotConstants {
     }
   }
 
-        /**
-	 * Unsigned decimal number
-	 * @return the corresponding value of the string
-	 * @error  corresponding value is too large
-	 */
+  final public void main() throws ParseException {
+    jj_consume_token(ROBOT_R);
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case VARS:
+      vars();
+      break;
+    default:
+      jj_la1[5] = jj_gen;
+      ;
+    }
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case PROCS:
+      procs();
+      break;
+    default:
+      jj_la1[6] = jj_gen;
+      ;
+    }
+    block();
+  }
+
+  final public void vars() throws ParseException {
+         String var1,var2;
+    jj_consume_token(VARS);
+    var1 = jj_consume_token(NAME);
+                                    token_source.variables.put(var1,"undefined");
+    label_2:
+    while (true) {
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case 32:
+        ;
+        break;
+      default:
+        jj_la1[7] = jj_gen;
+        break label_2;
+      }
+      jj_consume_token(32);
+      var2 = jj_consume_token(NAME);
+                                  token_source.variables.put(var2,"undefined");
+    }
+    jj_consume_token(33);
+  }
+
+  final public void procs() throws ParseException {
+    jj_consume_token(PROCS);
+    label_3:
+    while (true) {
+      procDefinition();
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NAME:
+        ;
+        break;
+      default:
+        jj_la1[8] = jj_gen;
+        break label_3;
+      }
+    }
+  }
+
+  final public void procDefinition() throws ParseException {
+         String procName; int params;
+    procName = jj_consume_token(NAME);
+    jj_consume_token(34);
+    jj_consume_token(35);
+    params = parameters();
+    jj_consume_token(35);
+    multipleExecution();
+                                                                                     token_source.variables_temporales=new HashSet<String>();
+    jj_consume_token(36);
+                 saveProcInfo(procName,params);
+  }
+
+  final public int parameters() throws ParseException {
+         String parameter1, parameter2;
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case NAME:
+      parameter1 = jj_consume_token(NAME);
+                                       token_source.variables_temporales.add(parameter1);
+      label_4:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case 32:
+          ;
+          break;
+        default:
+          jj_la1[9] = jj_gen;
+          break label_4;
+        }
+        jj_consume_token(32);
+        parameter2 = jj_consume_token(NAME);
+                                                                                                                    token_source.variables_temporales.add(parameter2);
+      }
+      break;
+    default:
+      jj_la1[10] = jj_gen;
+      ;
+    }
+                 {if (true) return token_source.variables_temporales.length;}
+    throw new Error("Missing return statement in function");
+  }
+
+  final public void saveProcInfo(String procName, int params) throws ParseException {
+                        if (token_source.variables.containsKey(procName)){if (true) throw new Error("El procedimiento ya se declar\u00f3 como variable");}
+                        else if (token_source.condicionales.contains(procName)){if (true) throw new Error("El procedimiento es una condici\u00f3n");}
+                        else token_source.procedimientos.put(procName,params);
+  }
+
+  final public void block() throws ParseException {
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case 34:
+      jj_consume_token(34);
+      multipleExecution();
+      jj_consume_token(36);
+      break;
+    case WHILE:
+    case IF:
+    case REPEAT:
+    case NAME:
+    case 38:
+    case 39:
+    case 40:
+    case 41:
+    case 42:
+    case 43:
+    case 44:
+    case 45:
+    case 46:
+    case 47:
+    case 48:
+      singleExecution();
+      break;
+    default:
+      jj_la1[11] = jj_gen;
+      jj_consume_token(-1);
+      throw new ParseException();
+    }
+  }
+
+  final public void multipleExecution() throws ParseException {
+    singleExecution();
+    label_5:
+    while (true) {
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case 33:
+        ;
+        break;
+      default:
+        jj_la1[12] = jj_gen;
+        break label_5;
+      }
+      jj_consume_token(33);
+      singleExecution();
+    }
+  }
+
+  final public void singleExecution() throws ParseException {
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case 38:
+    case 39:
+    case 40:
+    case 41:
+    case 42:
+    case 43:
+    case 44:
+    case 45:
+    case 46:
+    case 47:
+    case 48:
+      declaredProcedureCall();
+      break;
+    case WHILE:
+    case IF:
+    case REPEAT:
+      controlStructure();
+      break;
+    case NAME:
+      procedureCall();
+      break;
+    default:
+      jj_la1[13] = jj_gen;
+      jj_consume_token(-1);
+      throw new ParseException();
+    }
+  }
+
+  final public void procedureCall() throws ParseException {
+         String procName;int cantidad;
+    procName = jj_consume_token(NAME);
+    jj_consume_token(37);
+    cantidad = declaredParameters();
+                                                             if (token_source.procedimientos.containsKey(procName)==false){if (true) throw new Error("El procedimiento no esta definido");}
+                                                                                                                else if (token_source.procedimientos.get(procName)!=cantidad) {if (true) throw new Error("Faltan parametros");}
+  }
+
+  final public void controlStructure() throws ParseException {
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case IF:
+      IF();
+      break;
+    case WHILE:
+      WHILE();
+      break;
+    case REPEAT:
+      REPEAT();
+      break;
+    default:
+      jj_la1[14] = jj_gen;
+      jj_consume_token(-1);
+      throw new ParseException();
+    }
+  }
+
+  final public void declaredParameters() throws ParseException {
+         int cantidad; String parameter1,parameter2;
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case NAME:
+      parameter1 = jj_consume_token(NAME);
+                                       checkParameters(parameter1); cantidad++ ;
+      label_6:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case 32:
+          ;
+          break;
+        default:
+          jj_la1[15] = jj_gen;
+          break label_6;
+        }
+        jj_consume_token(32);
+        parameter2 = jj_consume_token(NAME);
+                                                                                                           checkParameters(parameter2); cantidad++;
+      }
+      break;
+    default:
+      jj_la1[16] = jj_gen;
+      ;
+    }
+                 {if (true) return cantidad;}
+  }
+
+  final public void checkParameters(String parameter) throws ParseException {
+                        if (token_source.variables.contains(procName)==false &&
+                                token_source.variables_temporales.contains(procName)==false){if (true) throw new Error(parameter +" no esta definido");}
+  }
+
+  final public void IF() throws ParseException {
+    jj_consume_token(IF);
+    conditionalCall();
+    jj_consume_token(THEN);
+    block();
+    jj_consume_token(ELSE);
+    block();
+  }
+
+  final public void WHILE() throws ParseException {
+    jj_consume_token(WHILE);
+    conditionalCall();
+    jj_consume_token(DO);
+    block();
+  }
+
+  final public void REPEAT() throws ParseException {
+    jj_consume_token(REPEAT);
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case NUM:
+      num = jj_consume_token(NUM);
+      break;
+      num = num();
+      break;
+    default:
+      jj_la1[17] = jj_gen;
+      jj_consume_token(-1);
+      throw new ParseException();
+    }
+    block();
+  }
+
+  final public void declaredProcedureCall() throws ParseException {
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case 38:
+      jj_consume_token(38);
+      n = jj_consume_token(NUM);
+      jj_consume_token(32);
+      name = jj_consume_token(NAME);
+                                              if (variables.contains(num)==false){if (true) throw new Error(name +" no esta definido");}variables.put(name,n);
+      break;
+    case 39:
+      jj_consume_token(39);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        x = jj_consume_token(NUM);
+        break;
+      case NAME:
+        x = getVarNum();
+        break;
+      default:
+        jj_la1[18] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        y = jj_consume_token(NUM);
+        break;
+      case NAME:
+        y = getVarNum();
+        break;
+      default:
+        jj_la1[19] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      break;
+    case 40:
+      jj_consume_token(40);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[20] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      break;
+    case 41:
+      jj_consume_token(41);
+      d = jj_consume_token(TURN);
+      break;
+    case 42:
+      jj_consume_token(42);
+      o = jj_consume_token(ORIENTATION);
+      break;
+    case 43:
+      jj_consume_token(43);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[21] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case BALLOONS:
+        x = jj_consume_token(BALLOONS);
+        break;
+      case CHIPS:
+        x = jj_consume_token(CHIPS);
+        break;
+      default:
+        jj_la1[22] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      break;
+    case 44:
+      jj_consume_token(44);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case BALLOONS:
+        x = jj_consume_token(BALLOONS);
+        break;
+      case CHIPS:
+        x = jj_consume_token(CHIPS);
+        break;
+      default:
+        jj_la1[23] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[24] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      break;
+    case 45:
+      jj_consume_token(45);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[25] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      d = jj_consume_token(VIEW);
+      break;
+    case 46:
+      jj_consume_token(46);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[26] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      d = jj_consume_token(ORIENTATION);
+      break;
+    case 47:
+      jj_consume_token(47);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[27] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      d = jj_consume_token(ORIENTATION);
+      break;
+    case 48:
+      jj_consume_token(48);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[28] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      d = jj_consume_token(ORIENTATION);
+      break;
+    default:
+      jj_la1[29] = jj_gen;
+      jj_consume_token(-1);
+      throw new ParseException();
+    }
+  }
+
+  final public void conditionalCall() throws ParseException {
+    switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+    case 49:
+      jj_consume_token(49);
+      o = jj_consume_token(ORIENTATION);
+      break;
+    case 50:
+      jj_consume_token(50);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[30] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case BALLOONS:
+        x = jj_consume_token(BALLOONS);
+        break;
+      case CHIPS:
+        x = jj_consume_token(CHIPS);
+        break;
+      default:
+        jj_la1[31] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      break;
+    case 51:
+      jj_consume_token(51);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[32] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case BALLOONS:
+        jj_consume_token(BALLOONS);
+        break;
+      case CHIPS:
+        jj_consume_token(CHIPS);
+        break;
+      default:
+        jj_la1[33] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      break;
+    case 52:
+      jj_consume_token(52);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[34] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      jj_consume_token(ORIENTATION);
+      break;
+    case 53:
+      jj_consume_token(53);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[35] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      jj_consume_token(ORIENTATION);
+      break;
+    case 54:
+      jj_consume_token(54);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[36] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      jj_consume_token(VIEW);
+      break;
+    case 55:
+      jj_consume_token(55);
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case NUM:
+        n = jj_consume_token(NUM);
+        break;
+      case NAME:
+        n = getVarNum();
+        break;
+      default:
+        jj_la1[37] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+      jj_consume_token(32);
+      jj_consume_token(VIEW);
+      break;
+    case 56:
+      jj_consume_token(56);
+      conditionalCall();
+      break;
+    default:
+      jj_la1[38] = jj_gen;
+      jj_consume_token(-1);
+      throw new ParseException();
+    }
+  }
+
   final public int num() throws ParseException, Error {
                 int total=1;
     jj_consume_token(NUM);
@@ -191,6 +795,23 @@ public class Robot implements RobotConstants {
     throw new Error("Missing return statement in function");
   }
 
+  final public int getVarNum() throws ParseException, Error {
+                Token token;
+                int number;
+    token = jj_consume_token(NAME);
+                                if (token_source.variables.containsKey(token.image)==False) {if (true) throw new Error(token.image + " no esta definido");}
+                                try
+                                {
+                                        number = Integer.parseInt(token_source.variables.get(token.image));
+                                }
+                                catch (NumberFormatException ee)
+                                {
+                                        {if (true) throw new Error("La variable posee el valor indefinido");}
+                                }
+                                {if (true) return number;}
+    throw new Error("Missing return statement in function");
+  }
+
   /** Generated Token Manager. */
   public RobotTokenManager token_source;
   SimpleCharStream jj_input_stream;
@@ -200,13 +821,18 @@ public class Robot implements RobotConstants {
   public Token jj_nt;
   private int jj_ntk;
   private int jj_gen;
-  final private int[] jj_la1 = new int[5];
+  final private int[] jj_la1 = new int[39];
   static private int[] jj_la1_0;
+  static private int[] jj_la1_1;
   static {
       jj_la1_init_0();
+      jj_la1_init_1();
    }
    private static void jj_la1_init_0() {
-      jj_la1_0 = new int[] {0xfe0,0xfe0,0xfe1,0x3000,0x3000,};
+      jj_la1_0 = new int[] {0xfe0,0xfe0,0xfe1,0x3000,0x3000,0x100000,0x200000,0x0,0x2000000,0x0,0x2000000,0x3c00000,0x0,0x3c00000,0x1c00000,0x0,0x2000000,0x4000,0x2004000,0x2004000,0x2004000,0x2004000,0x3000,0x3000,0x2004000,0x2004000,0x2004000,0x2004000,0x2004000,0x0,0x2004000,0x3000,0x2004000,0x3000,0x2004000,0x2004000,0x2004000,0x2004000,0x0,};
+   }
+   private static void jj_la1_init_1() {
+      jj_la1_1 = new int[] {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,0x0,0x1,0x0,0x1ffc4,0x2,0x1ffc0,0x0,0x1,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1ffc0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1fe0000,};
    }
 
   /** Constructor with InputStream. */
@@ -220,7 +846,7 @@ public class Robot implements RobotConstants {
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 5; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 39; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -234,7 +860,7 @@ public class Robot implements RobotConstants {
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 5; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 39; i++) jj_la1[i] = -1;
   }
 
   /** Constructor. */
@@ -244,7 +870,7 @@ public class Robot implements RobotConstants {
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 5; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 39; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -254,7 +880,7 @@ public class Robot implements RobotConstants {
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 5; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 39; i++) jj_la1[i] = -1;
   }
 
   /** Constructor with generated Token Manager. */
@@ -263,7 +889,7 @@ public class Robot implements RobotConstants {
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 5; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 39; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -272,7 +898,7 @@ public class Robot implements RobotConstants {
     token = new Token();
     jj_ntk = -1;
     jj_gen = 0;
-    for (int i = 0; i < 5; i++) jj_la1[i] = -1;
+    for (int i = 0; i < 39; i++) jj_la1[i] = -1;
   }
 
   private Token jj_consume_token(int kind) throws ParseException {
@@ -323,21 +949,24 @@ public class Robot implements RobotConstants {
   /** Generate ParseException. */
   public ParseException generateParseException() {
     jj_expentries.clear();
-    boolean[] la1tokens = new boolean[25];
+    boolean[] la1tokens = new boolean[57];
     if (jj_kind >= 0) {
       la1tokens[jj_kind] = true;
       jj_kind = -1;
     }
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 39; i++) {
       if (jj_la1[i] == jj_gen) {
         for (int j = 0; j < 32; j++) {
           if ((jj_la1_0[i] & (1<<j)) != 0) {
             la1tokens[j] = true;
           }
+          if ((jj_la1_1[i] & (1<<j)) != 0) {
+            la1tokens[32+j] = true;
+          }
         }
       }
     }
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 57; i++) {
       if (la1tokens[i]) {
         jj_expentry = new int[1];
         jj_expentry[0] = i;

@@ -1,24 +1,20 @@
 /*
 Gramatica para el Robot:
-Autor: Alejandro Arango
-Modificado por: Silvia Takahashi
-Modificado por: Juan Pablo Morales.
-Agregadas producciones para manejar globos
-Modificado por Silvia Takahashi
+Autores: Daniel Diaz y Nicolas Murillo
 
 
- **/
+**/
 
 
 options 
 {
-  
+
 	LOOKAHEAD=1; 
 	IGNORE_CASE=true;
 	STATIC = false;
-	
+
 }
-   
+
 
 PARSER_BEGIN(Robot)
 
@@ -26,7 +22,7 @@ package uniandes.lym.robot.control;
 
 import uniandes.lym.robot.kernel.*;
 import uniandes.lym.robot.view.Console;
- 
+
 import java.awt.Point;
 import java.io.*;
 import java.util.Vector;
@@ -38,8 +34,8 @@ public class Robot
 
 
 	private RobotWorldDec world;
-	
-	
+
+
 	void setWorld(RobotWorld w) {
 		world = (RobotWorldDec) w;	
 	}
@@ -82,34 +78,56 @@ TOKEN :
 {
 		<NUM: (<DIGIT>)+ >
 		|  	<#DIGIT: ["0"-"9"] >
-        
-}
 
+}
 
 TOKEN:  /* Palabras reservadas*/
 {
-		<WHILE:  "while" >
-		|	<IF:     "if"  >
-		|	<REPEAT: "repeat"  >
-		|	<PROCS:  "procs"  >
-		|	<VARS:   "vars"  >
+  		<ROBOT_R:  "robot_r" >
+	  	| <THEN:   "then:">
+	  	| <ELSE:   "else:">
+	  	| <DO:     "do:">
+ 		| <VARS:   "vars" >
+ 		| <PROCS:  "procs" >
+		| <WHILE:  "while:" >
+		| <IF:     "if:"  >
+		| <REPEAT: "repeat:"  >
+}
 
+TOKEN :
+{
+ 	 <NAME : (< LETTER >)(< DIGIT >|< LETTER >)* >
+	| < #LETTER   : ["a"-"z","A"-"Z"] >
 }
 
 
 
+TOKEN:
+{
+	<ORIENTATION: "north"| "south" | "east" | "west"  >
+	| <VIEW:  "front" |"right"| "left" |"back" >
+	| <TURN: "left"|"right"|"around" >
+}
+
+
+TOKEN_MGR_DECLS : {
+    HashMap<String,Integer> procedimientos= new HashMap<String,Integer>();
+    HashMap<String,Integer> variables = new HashMap<String,Integer>();
+    HashSet<String> variables_temporales= new HashSet<String>();
+    HashSet<String> condiciones= new HashSet<String>();
+}
 
 	//boolean command(uniandes.lym.robot.view.Console sistema) :
 	boolean command(Console sistema):
 	{	
-		
+
 		int x,y;
 		salida=new String();	
 	}
 
-	
+
 	{
-		(		  (
+		(		  (
 		   <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
 		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
 		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
@@ -125,7 +143,7 @@ TOKEN:  /* Palabras reservadas*/
 	    	    } catch (InterruptedException e) {
 	    			        System.err.format("IOException: %s%n", e);
 	    		    }
-	    			 
+
 			sistema.printOutput(salida);
 			return true;
 		})+
@@ -156,19 +174,163 @@ TOKEN:  /* Palabras reservadas*/
 
 
 
+void main():
+	{}
+	{
+		<ROBOT_R> (vars())? (procs())?  block()
+	}
 
+void vars():
+	{String var1,var2;}
+	{
+		<VARS> var1=<NAME> {token_source.variables.put(var1,"undefined");}
+		("," var2=<NAME> {token_source.variables.put(var2,"undefined");})* ";"
+	}
 
-
+void procs():
+	{}
+	{
+	<PROCS> (procDefinition())+
+	}
 
 
 	
+void procDefinition():
+	{String procName; int params; }
+	{
+		procName=<NAME> "[" "|" params=parameters() "|" multipleExecution() {token_source.variables_temporales=new HashSet<String>(); } "]"
+		{saveProcInfo(procName,params);}
+	 }
+
+int parameters():
+	{String parameter1, parameter2; }
+	{
+		(parameter1= < NAME > {token_source.variables_temporales.add(parameter1);} ("," parameter2=<NAME>  {token_source.variables_temporales.add(parameter2);})*)? 
+		{return token_source.variables_temporales.length;} 	
+	}
+
+void saveProcInfo(String procName, int params):
+	{}
+	//Se guarda el nombre del procedimiento y se revisa que no sea variable ni condicion
+	{
+		{
+			if (token_source.variables.containsKey(procName))throw new Error("El procedimiento ya se declaró como variable");
+			else if (token_source.condicionales.contains(procName))throw new Error("El procedimiento es una condición");
+			else token_source.procedimientos.put(procName,params);
+		}
+	}
+
+
+void block():
+	{}
+	{
+	("[" multipleExecution() "]") | (singleExecution())
+	}
+
+
+	
+void multipleExecution():
+	{}
+	{
+	singleExecution() ( ";"  singleExecution())* 
+	}
+
+
+void singleExecution():
+	{}
+	{
+	declaredProcedureCall()|controlStructure()|procedureCall()
+	}
+void procedureCall():
+	{String procName;int cantidad;}
+	{
+	procName=< NAME > ":" cantidad=declaredParameters() {if (token_source.procedimientos.containsKey(procName)==false)throw new Error("El procedimiento no esta definido");
+														else if (token_source.procedimientos.get(procName)!=cantidad) throw new Error("Faltan parametros");}
+	}
+	
+void controlStructure():
+	{}
+	{
+		(IF()) | (WHILE()) | (REPEAT())
+	}
+
+
+
+void declaredParameters():
+	{int cantidad; String parameter1,parameter2;}
+	//Se revisa que los parametros esten definidos
+	{
+		(parameter1= < NAME > {checkParameters(parameter1); cantidad++ ;} ("," parameter2=< NAME >{checkParameters(parameter2); cantidad++; }  )*)?
+		{return cantidad;}
+	}
 	
 
-	/**
-	 * Unsigned decimal number
-	 * @return the corresponding value of the string
-	 * @error  corresponding value is too large
-	 */
+
+void checkParameters(String parameter):
+{}
+
+{
+		{
+			if (token_source.variables.contains(procName)==false &&
+				token_source.variables_temporales.contains(procName)==false)throw new Error(parameter +" no esta definido");
+
+		}
+}
+
+
+void IF():
+	{}
+	{
+	<IF>  conditionalCall() <THEN>   block() <ELSE>  block()
+	}
+
+void WHILE():
+	{}
+	{
+	<WHILE>  conditionalCall() <DO>  block()
+	}
+
+
+void REPEAT():
+	{}
+	{
+	<REPEAT>  (num=<NUM>|(num=num())) block()
+	} 
+
+
+
+void declaredProcedureCall():
+	{}
+	{
+	"assignto:"  n=<NUM> "," name=<NAME> {if (variables.contains(num)==false)throw new Error(name +" no esta definido");variables.put(name,n);}
+	| "goto:"   (x=<NUM>|(x=getVarNum())) "," (y=<NUM>|(y=getVarNum()))
+	| "move:"   (n=<NUM>|(n=getVarNum()))
+	| "turn:"   (d=<TURN>)
+	| "face:"  (o=<ORIENTATION>)
+	| "put:"  (n=<NUM>|(n=getVarNum())) "," (x=<BALLOONS>|x=<CHIPS>)
+	| "pick:" (x=<BALLOONS>|x=<CHIPS>)"," (n=<NUM>|(n=getVarNum()))
+	| "movetothe:"  (n=<NUM>|(n=getVarNum())) "," (d=<VIEW>)
+	| "moveindir:"  (n=<NUM>|(n=getVarNum())) "," (d=<ORIENTATION>)
+	| "jumptothe:"  (n=<NUM>|(n=getVarNum())) "," (d=<ORIENTATION>)
+	| "jumpindir:"  (n=<NUM>|(n=getVarNum())) "," (d=<ORIENTATION>)
+	}
+
+void conditionalCall():	
+	{}
+	{
+	"facing:"   o=<ORIENTATION>
+	|"canPut:"  (n=<NUM>|(n=getVarNum())) ","  (x=<BALLOONS>|x=<CHIPS>) 
+	|"canPick:"    (n=<NUM>|(n=getVarNum()))","(<BALLOONS>|<CHIPS>)
+	|"canMoveInDir:"  (n=<NUM>|(n=getVarNum()))"," <ORIENTATION>
+	|"canJumpInDir:"  (n=<NUM>|(n=getVarNum()))"," <ORIENTATION>
+	|"canMoveToThe:"  (n=<NUM>|(n=getVarNum()))"," <VIEW>
+	|"canJumpToThe:"  (n=<NUM>|(n=getVarNum()))"," <VIEW>
+	|"not:" conditionalCall()
+	} 
+
+
+
+
 
 	int num() throws Error:
 	{	
@@ -189,4 +351,27 @@ TOKEN:  /* Palabras reservadas*/
 		}
 	}
 
+
+
+	int getVarNum() throws Error:
+	{
+		Token token;
+		int number;
+	}
 	
+	{
+		(token= <NAME>)
+	
+			{
+				if (token_source.variables.containsKey(token.image)==False) throw new Error(token.image + " no esta definido");
+				try 
+				{
+					number = Integer.parseInt(token_source.variables.get(token.image));
+				} 
+				catch (NumberFormatException ee) 
+				{
+					throw new Error("La variable posee el valor indefinido");
+				}
+				return number;
+			}
+	}

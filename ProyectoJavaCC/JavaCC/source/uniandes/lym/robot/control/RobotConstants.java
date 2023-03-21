@@ -33,15 +33,33 @@ public interface RobotConstants {
   /** RegularExpression Id. */
   int DIGIT = 15;
   /** RegularExpression Id. */
-  int WHILE = 16;
+  int ROBOT_R = 16;
   /** RegularExpression Id. */
-  int IF = 17;
+  int THEN = 17;
   /** RegularExpression Id. */
-  int REPEAT = 18;
+  int ELSE = 18;
   /** RegularExpression Id. */
-  int PROCS = 19;
+  int DO = 19;
   /** RegularExpression Id. */
   int VARS = 20;
+  /** RegularExpression Id. */
+  int PROCS = 21;
+  /** RegularExpression Id. */
+  int WHILE = 22;
+  /** RegularExpression Id. */
+  int IF = 23;
+  /** RegularExpression Id. */
+  int REPEAT = 24;
+  /** RegularExpression Id. */
+  int NAME = 25;
+  /** RegularExpression Id. */
+  int LETTER = 26;
+  /** RegularExpression Id. */
+  int ORIENTATION = 27;
+  /** RegularExpression Id. */
+  int VIEW = 28;
+  /** RegularExpression Id. */
+  int TURN = 29;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -64,15 +82,47 @@ public interface RobotConstants {
     "\"CHIPS\"",
     "<NUM>",
     "<DIGIT>",
-    "\"while\"",
-    "\"if\"",
-    "\"repeat\"",
-    "\"procs\"",
+    "\"robot_r\"",
+    "\"then:\"",
+    "\"else:\"",
+    "\"do:\"",
     "\"vars\"",
+    "\"procs\"",
+    "\"while:\"",
+    "\"if:\"",
+    "\"repeat:\"",
+    "<NAME>",
+    "<LETTER>",
+    "<ORIENTATION>",
+    "<VIEW>",
+    "<TURN>",
     "\"(\"",
     "\")\"",
     "\",\"",
     "\";\"",
+    "\"[\"",
+    "\"|\"",
+    "\"]\"",
+    "\":\"",
+    "\"assignto:\"",
+    "\"goto:\"",
+    "\"move:\"",
+    "\"turn:\"",
+    "\"face:\"",
+    "\"put:\"",
+    "\"pick:\"",
+    "\"movetothe:\"",
+    "\"moveindir:\"",
+    "\"jumptothe:\"",
+    "\"jumpindir:\"",
+    "\"facing:\"",
+    "\"canPut:\"",
+    "\"canPick:\"",
+    "\"canMoveInDir:\"",
+    "\"canJumpInDir:\"",
+    "\"canMoveToThe:\"",
+    "\"canJumpToThe:\"",
+    "\"not:\"",
   };
 
 }
