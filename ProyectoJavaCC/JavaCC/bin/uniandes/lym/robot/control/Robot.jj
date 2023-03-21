@@ -27,6 +27,8 @@ import java.awt.Point;
 import java.io.*;
 import java.util.Vector;
 import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 @SuppressWarnings("serial")
 public class Robot 
@@ -111,8 +113,8 @@ TOKEN:
 
 
 TOKEN_MGR_DECLS : {
-    HashMap<String,Integer> procedimientos= new HashMap<String,Integer>();
-    HashMap<String,Integer> variables = new HashMap<String,Integer>();
+    HashMap<String, Integer> procedimientos = new HashMap<String, Integer>();
+    HashMap<String,Number> variables = new HashMap<String,Number>();
     HashSet<String> variables_temporales= new HashSet<String>();
     HashSet<String> condiciones= new HashSet<String>();
 }
@@ -183,8 +185,8 @@ void main():
 void vars():
 	{String var1,var2;}
 	{
-		<VARS> var1=<NAME> {token_source.variables.put(var1,"undefined");}
-		("," var2=<NAME> {token_source.variables.put(var2,"undefined");})* ";"
+		<VARS> var1=<NAME>.image {token_source.variables.put(var1,Double.POSITIVE_INFINITY);}
+		("," var2=<NAME>.image {token_source.variables.put(var2,Double.POSITIVE_INFINITY);})* ";"
 	}
 
 void procs():
@@ -198,15 +200,15 @@ void procs():
 void procDefinition():
 	{String procName; int params; }
 	{
-		procName=<NAME> "[" "|" params=parameters() "|" multipleExecution() {token_source.variables_temporales=new HashSet<String>(); } "]"
+		procName=<NAME>.image "[" "|" params=parameters() "|" multipleExecution() {token_source.variables_temporales=new HashSet<String>(); } "]"
 		{saveProcInfo(procName,params);}
 	 }
 
 int parameters():
 	{String parameter1, parameter2; }
 	{
-		(parameter1= < NAME > {token_source.variables_temporales.add(parameter1);} ("," parameter2=<NAME>  {token_source.variables_temporales.add(parameter2);})*)? 
-		{return token_source.variables_temporales.length;} 	
+		(parameter1= < NAME >.image {token_source.variables_temporales.add(parameter1);} ("," parameter2=<NAME>.image  {token_source.variables_temporales.add(parameter2);})*)? 
+		{return token_source.variables_temporales.size();} 	
 	}
 
 void saveProcInfo(String procName, int params):
@@ -215,7 +217,7 @@ void saveProcInfo(String procName, int params):
 	{
 		{
 			if (token_source.variables.containsKey(procName))throw new Error("El procedimiento ya se declaró como variable");
-			else if (token_source.condicionales.contains(procName))throw new Error("El procedimiento es una condición");
+			else if (token_source.condiciones.contains(procName))throw new Error("El procedimiento es una condición");
 			else token_source.procedimientos.put(procName,params);
 		}
 	}
@@ -244,7 +246,7 @@ void singleExecution():
 void procedureCall():
 	{String procName;int cantidad;}
 	{
-	procName=< NAME > ":" cantidad=declaredParameters() {if (token_source.procedimientos.containsKey(procName)==false)throw new Error("El procedimiento no esta definido");
+	procName=< NAME >.image ":" cantidad=declaredParameters() {if (token_source.procedimientos.containsKey(procName)==false)throw new Error("El procedimiento no esta definido");
 														else if (token_source.procedimientos.get(procName)!=cantidad) throw new Error("Faltan parametros");}
 	}
 	
@@ -256,11 +258,11 @@ void controlStructure():
 
 
 
-void declaredParameters():
-	{int cantidad; String parameter1,parameter2;}
+int declaredParameters():
+	{int cantidad=0; String parameter1,parameter2;}
 	//Se revisa que los parametros esten definidos
 	{
-		(parameter1= < NAME > {checkParameters(parameter1); cantidad++ ;} ("," parameter2=< NAME >{checkParameters(parameter2); cantidad++; }  )*)?
+		(parameter1= < NAME >.image {checkParameters(parameter1); cantidad++ ;} ("," parameter2=< NAME >.image{checkParameters(parameter2); cantidad++; }  )*)?
 		{return cantidad;}
 	}
 	
@@ -271,8 +273,8 @@ void checkParameters(String parameter):
 
 {
 		{
-			if (token_source.variables.contains(procName)==false &&
-				token_source.variables_temporales.contains(procName)==false)throw new Error(parameter +" no esta definido");
+			if (token_source.variables.containsKey(parameter)==false &&
+				token_source.variables_temporales.contains(parameter)==false)throw new Error(parameter +" no esta definido");
 
 		}
 }
@@ -292,39 +294,39 @@ void WHILE():
 
 
 void REPEAT():
-	{}
+	{int num;}
 	{
-	<REPEAT>  (num=<NUM>|(num=num())) block()
+	<REPEAT>  (num=num()|(num=getVarNum())) block()
 	} 
 
 
 
 void declaredProcedureCall():
-	{}
+	{int n,Cx,Cy; String d,x,name,o;}
 	{
-	"assignto:"  n=<NUM> "," name=<NAME> {if (variables.contains(num)==false)throw new Error(name +" no esta definido");variables.put(name,n);}
-	| "goto:"   (x=<NUM>|(x=getVarNum())) "," (y=<NUM>|(y=getVarNum()))
-	| "move:"   (n=<NUM>|(n=getVarNum()))
-	| "turn:"   (d=<TURN>)
-	| "face:"  (o=<ORIENTATION>)
-	| "put:"  (n=<NUM>|(n=getVarNum())) "," (x=<BALLOONS>|x=<CHIPS>)
-	| "pick:" (x=<BALLOONS>|x=<CHIPS>)"," (n=<NUM>|(n=getVarNum()))
-	| "movetothe:"  (n=<NUM>|(n=getVarNum())) "," (d=<VIEW>)
-	| "moveindir:"  (n=<NUM>|(n=getVarNum())) "," (d=<ORIENTATION>)
-	| "jumptothe:"  (n=<NUM>|(n=getVarNum())) "," (d=<ORIENTATION>)
-	| "jumpindir:"  (n=<NUM>|(n=getVarNum())) "," (d=<ORIENTATION>)
+	"assignto:"  n=num() "," name=<NAME>.image {if (token_source.variables.containsKey(name)==false)throw new Error(name +" no esta definido");token_source.variables.put(name,n);}
+	| "goto:"   (Cx=num()|(Cx=getVarNum())) "," (Cy=num()|(Cy=getVarNum()))
+	| "move:"   (n=num()|(n=getVarNum()))
+	| "turn:"   (d=<TURN>.image)
+	| "face:"  (o=<ORIENTATION>.image)
+	| "put:"  (n=num()|(n=getVarNum())) "," (x=<BALLOONS>.image|x=<CHIPS>.image)
+	| "pick:" (x=<BALLOONS>.image|x=<CHIPS>.image)"," (n=num()|(n=getVarNum()))
+	| "movetothe:"  (n=num()|(n=getVarNum())) "," (d=<VIEW>.image)
+	| "moveindir:"  (n=num()|(n=getVarNum())) "," (d=<ORIENTATION>.image)
+	| "jumptothe:"  (n=num()|(n=getVarNum())) "," (d=<ORIENTATION>.image)
+	| "jumpindir:"  (n=num()|(n=getVarNum())) "," (d=<ORIENTATION>.image)
 	}
 
 void conditionalCall():	
-	{}
+	{int n; String x,d,o;}
 	{
-	"facing:"   o=<ORIENTATION>
-	|"canPut:"  (n=<NUM>|(n=getVarNum())) ","  (x=<BALLOONS>|x=<CHIPS>) 
-	|"canPick:"    (n=<NUM>|(n=getVarNum()))","(<BALLOONS>|<CHIPS>)
-	|"canMoveInDir:"  (n=<NUM>|(n=getVarNum()))"," <ORIENTATION>
-	|"canJumpInDir:"  (n=<NUM>|(n=getVarNum()))"," <ORIENTATION>
-	|"canMoveToThe:"  (n=<NUM>|(n=getVarNum()))"," <VIEW>
-	|"canJumpToThe:"  (n=<NUM>|(n=getVarNum()))"," <VIEW>
+	"facing:"   o=<ORIENTATION>.image
+	|"canPut:"  (n=num()|(n=getVarNum())) ","  (x=<BALLOONS>.image|x=<CHIPS>.image) 
+	|"canPick:"    (n=num()|(n=getVarNum()))","(x=<BALLOONS>.image|x=<CHIPS>.image)
+	|"canMoveInDir:"  (n=num()|(n=getVarNum()))"," d=<ORIENTATION>.image
+	|"canJumpInDir:"  (n=num()|(n=getVarNum()))"," d=<ORIENTATION>.image
+	|"canMoveToThe:"  (n=num()|(n=getVarNum()))"," o=<VIEW>.image
+	|"canJumpToThe:"  (n=num()|(n=getVarNum()))"," o=<VIEW>.image
 	|"not:" conditionalCall()
 	} 
 
@@ -356,22 +358,19 @@ void conditionalCall():
 	int getVarNum() throws Error:
 	{
 		Token token;
-		int number;
+		Number number;
 	}
 	
 	{
 		(token= <NAME>)
 	
 			{
-				if (token_source.variables.containsKey(token.image)==False) throw new Error(token.image + " no esta definido");
-				try 
-				{
-					number = Integer.parseInt(token_source.variables.get(token.image));
-				} 
-				catch (NumberFormatException ee) 
-				{
-					throw new Error("La variable posee el valor indefinido");
-				}
-				return number;
+			  	
+				if (token_source.variables.containsKey(token.image)==false) throw new Error(token.image + " no esta definido");
+
+				number=token_source.variables.get(token.image);
+				if (number.equals(Double.POSITIVE_INFINITY)) throw new Error("La variable posee el valor indefinido");
+				
+				return (int)number;
 			}
 	}

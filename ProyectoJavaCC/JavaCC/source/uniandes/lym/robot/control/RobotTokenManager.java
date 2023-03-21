@@ -6,12 +6,14 @@ import java.awt.Point;
 import java.io.*;
 import java.util.Vector;
 import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 /** Token Manager. */
 public class RobotTokenManager implements RobotConstants
 {
-    HashMap<String,Integer> procedimientos= new HashMap<String,Integer>();
-    HashMap<String,Integer> variables = new HashMap<String,Integer>();
+    HashMap<String, Integer> procedimientos = new HashMap<String, Integer>();
+    HashMap<String,Number> variables = new HashMap<String,Number>();
     HashSet<String> variables_temporales= new HashSet<String>();
     HashSet<String> condiciones= new HashSet<String>();
 
