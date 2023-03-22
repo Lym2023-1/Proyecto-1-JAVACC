@@ -10,7 +10,7 @@ Aun en desarrollo.
 
 ### Uso
 La carpeta ProyectoJavaCC incluye el parser con el funcionamiento del robot
-La carpeta ParserTesterClean incluye el archivo newparser.jj, el cual sirve para ejecutar el parser sin usar el robot
+El archivo NuevoParser.jj incluye solo el parser, funciona al introducirse en el esqueleto del tp1
 
 
 ### Decisiones
