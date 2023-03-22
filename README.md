@@ -8,8 +8,6 @@ Aun en desarrollo.
 
 ## Comentarios entrega
 
-### Uso
-- La carpeta ProyectoJavaCC incluye el parser con el funcionamiento del robot
 
 
 
