@@ -98,7 +98,13 @@ TOKEN :
 
 	
 	{
-				( main()
+				( main()		|    <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
+		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
+		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
+		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
+		|  <PUT> "("  put() ")"					  			
+		|  <PICK> "(" get()  ")"	
+	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
 		{
 		    try {
 	    			 Thread.sleep(900);
@@ -141,39 +147,6 @@ TOKEN :
 	 * @return the corresponding value of the string
 	 * @error  corresponding value is too large
 	 */
-/* 
-	int num() throws Error:
-	{	
-		int total=1;
-	}
-	{
-		<NUM>
-		{
-			try 
-			{
-				total = Integer.parseInt(token.image);
-			} 
-			catch (NumberFormatException ee) 
-			{
-				throw new Error("Number out of bounds: "+token.image+" !!");
-			}
-			return total;
-		}
-	}
-
-	 	
-
-		   <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
-		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
-		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
-		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
-		|  <PUT> "("  put() ")"					  			
-		|  <PICK> "(" get()  ")"	
-	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
-		) ";" 
-
-
- 	*/
 
 
 
@@ -470,29 +443,136 @@ void declaredProcedureCall() :
 
 		    } }
 		| < GOTO > 	    ":" (Cx = num()|(Cx = getVarNum()))","(Cy = num()|(Cy = getVarNum()))
-		  {if (token_source.activo); }
-		| < MOVE > 	    ":" (n = num()|(n = getVarNum()))
+		  {if (token_source.activo) world.setPostion(Cx,Cy);; }
+		| < MOVE > 	    ":" (n = num()|(n = getVarNum())) {move(n);}
 		
-			{if (token_source.activo) {int i=n;
-				if (world.facingWest()) { while(n >0) { world.left();n--; };salida= "Desplazamiento de "+i+" pasos al oeste"; }
-				else if (world.facingEast())  { while(n >0) { world.right();n--; };salida= "Desplazamiento de "+i+" pasos al este"; }
-				else if (world.facingSouth())  { while(n >0) { world.down();n--; };salida= "Desplazamiento de "+i+" pasos al sur"; }
-				else if (world.facingNorth())  { while(n >0) { world.up();n--; }; salida= "Desplazamiento de "+i+" pasos al norte";}
 
 
-			  } }
+
+			  
 		| < PUT >       ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image )
-		  {if (token_source.activo); }
+		  {if (token_source.activo) {
+				if (x.equals("balloons")) { while(n >0) { world.putBalloon();n--; }; }
+				else if (x.equals("chips")) { while(n >0) { world.putChip();n--; }; }
+
+		    } }
 		| < PICK >      ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image )
-		  {if (token_source.activo); }
+		  {if (token_source.activo) {
+				if (x.equals("balloons")) { while(n >0) { world.pickupBalloon();n--; }; }
+				else if (x.equals("chips")) { while(n >0) { world.pickupChip();n--; }; }
+
+		    } }
+
+		  
 		| < MOVETOTHE > ":" (n = num()|(n = getVarNum()))  "," (d = < VIEW >.image|d= <LEFT>.image  | d=<RIGHT>.image)
-		  {if (token_source.activo); }
+		  {if (token_source.activo) { 
+
+				
+				if (d.equals("front")) {
+					if (world.getFacing()==0) {  while(n >0) { world.up();n--; }; }   
+					else if (world.getFacing()==1) {  while(n >0) { world.down();n--; }; }   
+					else if (world.getFacing()==2) {  while(n >0) { world.left();n--; }; }   
+					else if (world.getFacing()==3) {  while(n >0) { world.right();n--; }; } }   
+
+				else if (d.equals("left")) { 
+					if (world.getFacing()==0) {  while(n >0) { world.left();n--; }; }   
+					else if (world.getFacing()==1) {  while(n >0) { world.right();n--; }; }   
+					else if (world.getFacing()==2) {  while(n >0) { world.up();n--; }; }   
+					else if (world.getFacing()==3) {  while(n >0) { world.down();n--; }; } }
+
+				
+				else if (d.equals("right")) { 
+					if (world.getFacing()==0) {  while(n >0) { world.right();n--; }; }   
+					else if (world.getFacing()==1) {  while(n >0) { world.left();n--; }; }   
+					else if (world.getFacing()==2) {  while(n >0) { world.down();n--; }; }   
+					else if (world.getFacing()==3) {  while(n >0) { world.up();n--; }; } }
+				
+				else if (d.equals("back")) { 
+					if (world.getFacing()==0) {  while(n >0) { world.down();n--; }; }   
+					else if (world.getFacing()==1) {  while(n >0) { world.up();n--; }; }   
+					else if (world.getFacing()==2) {  while(n >0) { world.left();n--; }; }      
+					else if (world.getFacing()==3) {  while(n >0) { world.right();n--; }; }}   
+				
+				
+				
+				salida= "Se ha avanzado hacia la direccion deseada "; 
+
+
+
+		    } }
 		| < MOVEINDIR > ":" (n = num()|(n = getVarNum()))  "," (d = < ORIENTATION >.image)
-		  {if (token_source.activo); }
+		  {if (token_source.activo) { 
+
+
+
+
+				int facing=0;
+				if (d.equals("north")) { facing=0;}
+				else if (d.equals("south")) { facing=1; }
+				else if (d.equals("east")) { facing=2; }
+				else if (d.equals("west")) { facing=3; }
+				while (world.getFacing()!=facing) { world.turnRight();}
+				move(n);
+				salida= "Se ha avanzado en la direccion "; 
+		} }
+
+
+
 		| < JUMPTOTHE > ":" (n = num()|(n = getVarNum()))  "," (d = < VIEW >.image|d= <LEFT>.image  | d=<RIGHT>.image)
-		  {if (token_source.activo); }
+		  {if (token_source.activo) {
+				
+				int xPos = (int)world.getPosition().getX();
+				int yPos = (int)world.getPosition().getY();
+				if (d.equals("front")) {
+					if (world.getFacing()==0)world.setPostion(xPos,yPos-n);
+					else if (world.getFacing()==1)world.setPostion(xPos,yPos+n);
+					else if (world.getFacing()==2)world.setPostion(xPos+n,yPos);
+					else if (world.getFacing()==3)world.setPostion(xPos-n,yPos); }
+
+				else if (d.equals("left")) { 
+					if (world.getFacing()==0)world.setPostion(xPos-n,yPos);
+					else if (world.getFacing()==1)world.setPostion(xPos+n,yPos);
+					else if (world.getFacing()==2)world.setPostion(xPos,yPos-n);
+					else if (world.getFacing()==3)world.setPostion(xPos,yPos+n); }
+
+				
+				else if (d.equals("right")) { 
+					if (world.getFacing()==0)world.setPostion(xPos+n,yPos);
+					else if (world.getFacing()==1)world.setPostion(xPos-n,yPos);
+					else if (world.getFacing()==2)world.setPostion(xPos,yPos+n);
+					else if (world.getFacing()==3)world.setPostion(xPos,yPos-n); }
+				
+				else if (d.equals("back")) { 
+					if (world.getFacing()==0)world.setPostion(xPos,yPos+n);
+					else if (world.getFacing()==1)world.setPostion(xPos,yPos-n);
+					else if (world.getFacing()==2)world.setPostion(xPos-n,yPos);
+					else if (world.getFacing()==3)world.setPostion(xPos+n,yPos); }
+				
+				
+				
+				salida= "Se ha saltado "; 
+
+
+
+		    } }
 		| < JUMPINDIR > ":" (n = num()|(n = getVarNum()))  "," (d = < ORIENTATION >.image)
-		  {if (token_source.activo); }
+		  {if (token_source.activo) {
+				int direction=0;
+				int xPos = (int)world.getPosition().getX();
+				int yPos = (int)world.getPosition().getY();
+				if (d.equals("north")) { direction=0; world.setPostion(xPos,yPos-n); }
+				else if (d.equals("south")) { direction=1;world.setPostion(xPos,yPos+n); }
+				else if (d.equals("east")) { direction=2;world.setPostion(xPos+n,yPos); }
+				else if (d.equals("west")) { direction=3;world.setPostion(xPos-n,yPos); }
+				while (world.getFacing()!=direction) { world.turnRight();}
+				
+				
+				salida= "Se ha saltado "; 
+
+
+
+		    }
+		  }
 		| <NOP> ":"
 		  
 	}
@@ -509,6 +589,28 @@ void conditionalCall():
 		|<CANJUMPTOTHE> ":" (n=num()|(n=getVarNum())) "," (o = < VIEW >.image|o= <LEFT>.image  | o=<RIGHT>.image)
 		|<NOT >":" conditionalCall()
 	} 
+
+
+
+
+
+
+
+
+
+
+void move(int n):
+{}
+{
+  
+			{if (token_source.activo) {int i=n;
+				if (world.facingWest()) { while(n >0) { world.left();n--; };salida= "Desplazamiento de "+i+" pasos al oeste"; }
+				else if (world.facingEast())  { while(n >0) { world.right();n--; };salida= "Desplazamiento de "+i+" pasos al este"; }
+				else if (world.facingSouth())  { while(n >0) { world.down();n--; };salida= "Desplazamiento de "+i+" pasos al sur"; }
+				else if (world.facingNorth())  { while(n >0) { world.up();n--; }; salida= "Desplazamiento de "+i+" pasos al norte";} } }
+}
+
+
 
 
 
