@@ -9,8 +9,8 @@ Aun en desarrollo.
 ## Comentarios entrega
 
 ### Uso
-La carpeta ProyectoJavaCC incluye el parser con el funcionamiento del robot
-El archivo NuevoParser.jj incluye solo el parser, funciona al introducirse en el esqueleto del tp1
+- La carpeta ProyectoJavaCC incluye el parser con el funcionamiento del robot
+- El archivo NuevoParser.jj incluye solo el parser, funciona al introducirse en el esqueleto del tp1
 
 
 ### Decisiones
