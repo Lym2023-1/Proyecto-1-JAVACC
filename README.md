@@ -9,12 +9,10 @@ Aun en desarrollo.
 ## Comentarios entrega
 
 ### Uso
-La carpeta ProyectoJavaCC incluye el parser con el funcionamiento del robot
-El archivo NuevoParser.jj incluye solo el parser, funciona al introducirse en el esqueleto del tp1
+- La carpeta ProyectoJavaCC incluye el parser con el funcionamiento del robot
+- El archivo NuevoParser.jj incluye solo el parser, funciona al introducirse en el esqueleto del tp1
 
 
 ### Decisiones
-En el enunciado hay una inconsistencia con: canMoveToThe
-Se explica que su sintaxis es de la forma: canMoveToThe: n ,O – where O is one of: front, right, left, or back
-Sin embargo, en el ejemplo sale: while : canMovetoThe : 1 , north do
-En la implementacion nos basamos en el enunciado
+- En el enunciado hay una inconsistencia con: canMoveToThe, se explica que su sintaxis es de la forma: canMoveToThe: n ,O – where O is one of: front, right, left, or back. Sin embargo, en el ejemplo sale: while : canMovetoThe : 1 , north do
+- En la implementacion nos basamos en el enunciado
