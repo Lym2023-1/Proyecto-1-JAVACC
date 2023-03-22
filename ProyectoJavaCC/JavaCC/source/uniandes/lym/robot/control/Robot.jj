@@ -88,23 +88,27 @@ TOKEN :
 }
 
 
-
 	//boolean command(uniandes.lym.robot.view.Console sistema) :
 	boolean command(Console sistema):
 	{	
+		
 		int x,y;
 		salida=new String();	
 	}
 
 	
 	{
-				( main()		|    <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
+		(
+		  main() {salida = "Archivo ";}|(
+		    <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
 		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
 		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
 		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
 		|  <PUT> "("  put() ")"					  			
 		|  <PICK> "(" get()  ")"	
 	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+		) ";" 
+
 		{
 		    try {
 	    			 Thread.sleep(900);
@@ -118,6 +122,10 @@ TOKEN :
 
     	| <EOF> {return false;} 
 	}
+
+
+
+
 
 	void put() :
 	{
@@ -220,13 +228,14 @@ TOKEN : /* Declaracion para nombres */
 }
 
 	
-TOKEN_MGR_DECLS : /* Estructuras de datos para almacenar datos definidos por el usuario*/
+TOKEN_MGR_DECLS : /* centinelas y estructuras de datos para almacenar datos definidos por el usuario*/
 {
   HashMap < String, Integer > procedimientos = new HashMap < String, Integer > ();
   HashMap < String, String > variables = new HashMap < String, String > ();
   HashMap < String, Integer > variables_temporales = new HashMap < String, Integer > ();
   HashSet < String> condiciones = new HashSet < String> ();
-  boolean activo=false;
+  boolean ejecutarInstrucciones=false;
+  boolean condicionEstaActiva=true;
     {
 
       	//Se guardan todas las condiciones
@@ -241,7 +250,7 @@ void main() :
 {}
 {
   //Funcion principal
-  < ROBOT_R >(vars())?(procs())? {token_source.activo=true;}block()
+  < ROBOT_R >(vars())?(procs())? {token_source.ejecutarInstrucciones=true;}block()
 }
 
 void vars() :
@@ -387,7 +396,7 @@ void IF() :
 {}
 {
   	//condicional if then else, los tres deben aparecer para considerarse correcto
- 	< IF > ":" conditionalCall() < THEN >":" block() (< ELSE >":" block())?
+ 	< IF > ":" token_source.condicionEstaActiva=conditionalCall() < THEN >":" block() { token_source.condicionEstaActiva=!token_source.condicionEstaActiva;}(< ELSE >":" block())?{ token_source.condicionEstaActiva=true;}
 }
 
 void WHILE() :
@@ -416,9 +425,9 @@ void declaredProcedureCall() :
 	  	
 		  < ASSIGNTO > ":" n = num() "," name = < NAME >.image
 		  {checkParameters(name.toLowerCase());}
-		  {if (token_source.activo&& token_source.variables.containsKey(name)); token_source.variables.put(name, Integer.toString(n)); }
+		  {if (token_source.ejecutarInstrucciones&& token_source.variables.containsKey(name)); token_source.variables.put(name, Integer.toString(n)); }
 		| < TURN >      ":" (d = < AROUND >.image | d= <LEFT>.image  | d=<RIGHT>.image )
-		  {if (token_source.activo) {
+		  {if (token_source.ejecutarInstrucciones) {
 				if (d.equals("right")) { world.turnRight();salida= "Giro a la derecha"; }
 				else if (d.equals("left")) { world.turnRight();world.turnRight();world.turnRight();salida= "Giro a la izquierda"; }
 				else if (d.equals("around")) { world.turnRight();world.turnRight();salida= "Giro doble"; }
@@ -431,7 +440,7 @@ void declaredProcedureCall() :
 
 		}
 		| < FACE >      ":" (o = < ORIENTATION >.image)
-		  {if (token_source.activo) {
+		  {if (token_source.ejecutarInstrucciones && token_source.condicionEstaActiva) {
 		    int direction=0;
 			if (o.equals("north"))direction=0;
 			else if (o.equals("south"))direction=1;
@@ -443,7 +452,7 @@ void declaredProcedureCall() :
 
 		    } }
 		| < GOTO > 	    ":" (Cx = num()|(Cx = getVarNum()))","(Cy = num()|(Cy = getVarNum()))
-		  {if (token_source.activo) world.setPostion(Cx,Cy);; }
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) world.setPostion(Cx,Cy);; }
 		| < MOVE > 	    ":" (n = num()|(n = getVarNum())) {move(n);}
 		
 
@@ -451,13 +460,13 @@ void declaredProcedureCall() :
 
 			  
 		| < PUT >       ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image )
-		  {if (token_source.activo) {
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) {
 				if (x.equals("balloons")) { while(n >0) { world.putBalloon();n--; }; }
 				else if (x.equals("chips")) { while(n >0) { world.putChip();n--; }; }
 
 		    } }
 		| < PICK >      ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image )
-		  {if (token_source.activo) {
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) {
 				if (x.equals("balloons")) { while(n >0) { world.pickupBalloon();n--; }; }
 				else if (x.equals("chips")) { while(n >0) { world.pickupChip();n--; }; }
 
@@ -465,7 +474,7 @@ void declaredProcedureCall() :
 
 		  
 		| < MOVETOTHE > ":" (n = num()|(n = getVarNum()))  "," (d = < VIEW >.image|d= <LEFT>.image  | d=<RIGHT>.image)
-		  {if (token_source.activo) { 
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) { 
 
 				
 				if (d.equals("front")) {
@@ -501,7 +510,7 @@ void declaredProcedureCall() :
 
 		    } }
 		| < MOVEINDIR > ":" (n = num()|(n = getVarNum()))  "," (d = < ORIENTATION >.image)
-		  {if (token_source.activo) { 
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) { 
 
 
 
@@ -519,7 +528,7 @@ void declaredProcedureCall() :
 
 
 		| < JUMPTOTHE > ":" (n = num()|(n = getVarNum()))  "," (d = < VIEW >.image|d= <LEFT>.image  | d=<RIGHT>.image)
-		  {if (token_source.activo) {
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) {
 				
 				int xPos = (int)world.getPosition().getX();
 				int yPos = (int)world.getPosition().getY();
@@ -556,7 +565,7 @@ void declaredProcedureCall() :
 
 		    } }
 		| < JUMPINDIR > ":" (n = num()|(n = getVarNum()))  "," (d = < ORIENTATION >.image)
-		  {if (token_source.activo) {
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) {
 				int direction=0;
 				int xPos = (int)world.getPosition().getX();
 				int yPos = (int)world.getPosition().getY();
@@ -577,17 +586,142 @@ void declaredProcedureCall() :
 		  
 	}
 
-void conditionalCall():	
-{int n; String x,d,o;}
+boolean conditionalCall():	
+{int n; String x,d,o;Boolean ans=false; int xPos=(int)world.getPosition().getX();int yPos = (int)world.getPosition().getY();}
 	{
 		< FACING > 		":" o=<ORIENTATION>.image
-		|<CANPUT> 		":" (n=num()|(n=getVarNum())) "," (x=<BALLOONS>.image|x=<CHIPS>.image ) 
-		|<CANPICK> 		":" (n=num()|(n=getVarNum())) "," (x=<BALLOONS>.image|x=<CHIPS>.image ) 
+		{
+  
+					if (world.getFacing()==0 && o.equals("north"))return true;
+					else if (world.getFacing()==1 && o.equals("south"))return true;
+					else if (world.getFacing()==2 && o.equals("east"))return true;
+					else if (world.getFacing()==3 && o.equals("west"))return true;
+					else return false;
+					}
+
+
+		|<CANPUT> 		":" (n=num()|(n=getVarNum())) "," (x=<BALLOONS>.image|x=<CHIPS>.image )
+		{ return false;}
+		|<CANPICK> 		":" (n=num()|(n=getVarNum())) "," (x=<BALLOONS>.image|x=<CHIPS>.image )
+		{ return false;}
+
+		
 		|<CANMOVEINDIR> ":" (n=num()|(n=getVarNum())) ","  d=<ORIENTATION>.image
+		{ 
+				
+				if (d.equals("north")) { ans=world.blockedInRange(xPos, yPos, n, 0);}
+				else if (d.equals("south")) { ans=world.blockedInRange(xPos, yPos, n, 1); }
+				else if (d.equals("east")) { ans=world.blockedInRange(xPos, yPos, n, 2); }
+				else if (d.equals("west")) { ans=world.blockedInRange(xPos, yPos, n, 3); }
+				
+				salida= "Se ha comprobado si se puede avanzar en dir ";
+				return ans;
+		}
+
+
+
 		|<CANJUMPINDIR> ":" (n=num()|(n=getVarNum())) ","  d=<ORIENTATION>.image
+				{
+
+				if (d.equals("north")) {  ans=world.isBlocked(new Point(xPos,yPos-n));} 
+				else if (d.equals("south")){ans=world.isBlocked(new Point(xPos,yPos+n)); }
+				else if (d.equals("east")) {ans=world.isBlocked(new Point(xPos+n,yPos));}
+				else if (d.equals("west")) {ans=world.isBlocked(new Point(xPos-n,yPos));}
+				
+				
+				
+				salida= "Es posible saltar en dir "; 
+				return ans;
+
+
+		    
+		  }
 		|<CANMOVETOTHE> ":" (n=num()|(n=getVarNum())) "," (o = < VIEW >.image|o= <LEFT>.image  | o=<RIGHT>.image)
+
+	{ 
+
+					
+					
+					if (o.equals("front")) {
+						if (world.getFacing()==0) {  ans=world.blockedInRange(xPos, yPos, n, 0); }    
+						else if (world.getFacing()==1) {   ans=world.blockedInRange(xPos, yPos, n, 1); }     
+						else if (world.getFacing()==2) {   ans=world.blockedInRange(xPos, yPos, n, 3); }   
+						else if (world.getFacing()==3) {   ans=world.blockedInRange(xPos, yPos, n, 2); } }   
+	
+					else if (o.equals("left")) { 
+						if (world.getFacing()==0) {   ans=world.blockedInRange(xPos, yPos, n, 3); }  
+						else if (world.getFacing()==1) {   ans=world.blockedInRange(xPos, yPos, n, 2); }   
+						else if (world.getFacing()==2) {   ans=world.blockedInRange(xPos, yPos, n, 0); }  
+						else if (world.getFacing()==3) {   ans=world.blockedInRange(xPos, yPos, n, 1); } }
+	
+					
+					else if (o.equals("right")) { 
+						if (world.getFacing()==0) {   ans=world.blockedInRange(xPos, yPos, n, 2); }   
+						else if (world.getFacing()==1) {   ans=world.blockedInRange(xPos, yPos, n, 3); }
+						else if (world.getFacing()==2) {   ans=world.blockedInRange(xPos, yPos, n, 1); }  
+						else if (world.getFacing()==3) {   ans=world.blockedInRange(xPos, yPos, n, 0); } }
+					
+					else if (o.equals("back")) { 
+						if (world.getFacing()==0) {   ans=world.blockedInRange(xPos, yPos, n, 1); }   
+						else if (world.getFacing()==1) {   ans=world.blockedInRange(xPos, yPos, n, 0); }
+						else if (world.getFacing()==2) {   ans=world.blockedInRange(xPos, yPos, n, 3); }      
+						else if (world.getFacing()==3) {   ans=world.blockedInRange(xPos, yPos, n, 2); } }   
+					
+					
+					
+					salida= "Se ha avanzado hacia la direccion deseada ";
+					return ans;
+
+
+
+		    } 
+
+		
+
+
 		|<CANJUMPTOTHE> ":" (n=num()|(n=getVarNum())) "," (o = < VIEW >.image|o= <LEFT>.image  | o=<RIGHT>.image)
-		|<NOT >":" conditionalCall()
+
+				{
+				
+				int posX = (int)world.getPosition().getX();
+				int posY = (int)world.getPosition().getY();
+			
+				if (o.equals("front")) {
+					if (world.getFacing()==0)ans=world.isBlocked(new Point(posX,yPos-n));
+					else if (world.getFacing()==1)ans=world.isBlocked(new Point(xPos,yPos+n));
+					else if (world.getFacing()==2)ans=world.isBlocked(new Point(xPos+n,yPos));
+					else if (world.getFacing()==3)ans=world.isBlocked(new Point(xPos-n,yPos)); }
+
+				else if (o.equals("left")) { 
+					if (world.getFacing()==0)ans=world.isBlocked(new Point(xPos-n,yPos));
+					else if (world.getFacing()==1)ans=world.isBlocked(new Point(xPos+n,yPos));
+					else if (world.getFacing()==2)ans=world.isBlocked(new Point(xPos,yPos-n));
+					else if (world.getFacing()==3)ans=world.isBlocked(new Point(xPos,yPos+n)); }
+
+				
+				else if (o.equals("right")) { 
+					if (world.getFacing()==0)ans=world.isBlocked(new Point(xPos+n,yPos));
+					else if (world.getFacing()==1)ans=world.isBlocked(new Point(xPos-n,yPos));
+					else if (world.getFacing()==2)ans=world.isBlocked(new Point(xPos,yPos+n));
+					else if (world.getFacing()==3)ans=world.isBlocked(new Point(xPos,yPos-n)); }
+				
+				else if (o.equals("back")) { 
+					if (world.getFacing()==0)ans=world.isBlocked(new Point(xPos,yPos+n));
+					else if (world.getFacing()==1)ans=world.isBlocked(new Point(xPos,yPos-n));
+					else if (world.getFacing()==2)ans=world.isBlocked(new Point(xPos-n,yPos));
+					else if (world.getFacing()==3)ans=world.isBlocked(new Point(xPos+n,yPos)); }
+				
+				
+				
+				salida= "Es posible saltar hacia "; 
+				return ans;
+
+
+		   		 } 
+
+		
+		|<NOT >":" ans=conditionalCall()
+		{ return !ans;}
 	} 
 
 
@@ -603,7 +737,7 @@ void move(int n):
 {}
 {
   
-			{if (token_source.activo) {int i=n;
+			{if (token_source.ejecutarInstrucciones) {int i=n;
 				if (world.facingWest()) { while(n >0) { world.left();n--; };salida= "Desplazamiento de "+i+" pasos al oeste"; }
 				else if (world.facingEast())  { while(n >0) { world.right();n--; };salida= "Desplazamiento de "+i+" pasos al este"; }
 				else if (world.facingSouth())  { while(n >0) { world.down();n--; };salida= "Desplazamiento de "+i+" pasos al sur"; }
@@ -627,8 +761,9 @@ int num() throws Error :
     catch (NumberFormatException ee){
       throw new Error("No es posible convertir en numero: " + token.image + " !!");
     }
-    return total;
+    
   }
+  {return total;}
 }
 
 
@@ -648,8 +783,9 @@ int getVarNum() throws Error :
     catch (NumberFormatException ee){
       throw new Error("Variable con valor undefined" + token.beginLine + token_source.variables + token.image + token_source.variables_temporales);
     }			
-    return number;
+   
   }
+  { return number;}
 }
 
 
