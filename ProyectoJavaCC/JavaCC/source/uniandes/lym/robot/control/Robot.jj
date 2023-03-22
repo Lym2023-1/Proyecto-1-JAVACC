@@ -98,7 +98,7 @@ TOKEN :
 
 	
 	{
-				(main()
+				( main()
 		{
 		    try {
 	    			 Thread.sleep(900);
@@ -253,6 +253,7 @@ TOKEN_MGR_DECLS : /* Estructuras de datos para almacenar datos definidos por el 
   HashMap < String, String > variables = new HashMap < String, String > ();
   HashMap < String, Integer > variables_temporales = new HashMap < String, Integer > ();
   HashSet < String> condiciones = new HashSet < String> ();
+  boolean activo=false;
     {
 
       	//Se guardan todas las condiciones
@@ -267,7 +268,7 @@ void main() :
 {}
 {
   //Funcion principal
-  < ROBOT_R >(vars())?(procs())?block()
+  < ROBOT_R >(vars())?(procs())? {token_source.activo=true;}block()
 }
 
 void vars() :
@@ -413,7 +414,7 @@ void IF() :
 {}
 {
   	//condicional if then else, los tres deben aparecer para considerarse correcto
- 	< IF > ":" conditionalCall() < THEN >":" block() < ELSE >":" block()
+ 	< IF > ":" conditionalCall() < THEN >":" block() (< ELSE >":" block())?
 }
 
 void WHILE() :
@@ -441,19 +442,59 @@ void declaredProcedureCall() :
 
 	  	
 		  < ASSIGNTO > ":" n = num() "," name = < NAME >.image
-		  {checkParameters(name.toLowerCase());
-		   if (token_source.variables.containsKey(name)) token_source.variables.put(name, Integer.toString(n));}
-		| < TURN >      ":" (d = < AROUND >.image | d= <LEFT>.image  | d=<RIGHT>.image )          
+		  {checkParameters(name.toLowerCase());}
+		  {if (token_source.activo&& token_source.variables.containsKey(name)); token_source.variables.put(name, Integer.toString(n)); }
+		| < TURN >      ":" (d = < AROUND >.image | d= <LEFT>.image  | d=<RIGHT>.image )
+		  {if (token_source.activo) {
+				if (d.equals("right")) { world.turnRight();salida= "Giro a la derecha"; }
+				else if (d.equals("left")) { world.turnRight();world.turnRight();world.turnRight();salida= "Giro a la izquierda"; }
+				else if (d.equals("around")) { world.turnRight();world.turnRight();salida= "Giro doble"; }
+
+
+
+		        }
+
+
+
+		}
 		| < FACE >      ":" (o = < ORIENTATION >.image)
+		  {if (token_source.activo) {
+		    int direction=0;
+			if (o.equals("north"))direction=0;
+			else if (o.equals("south"))direction=1;
+			else if (o.equals("east"))direction=2;
+			else if (o.equals("west"))direction=3;
+			while (world.getFacing()!=direction) { world.turnRight();}
+			salida= "La orientacion actual es: "+o; 
+			
+
+		    } }
 		| < GOTO > 	    ":" (Cx = num()|(Cx = getVarNum()))","(Cy = num()|(Cy = getVarNum()))
+		  {if (token_source.activo); }
 		| < MOVE > 	    ":" (n = num()|(n = getVarNum()))
-		| < PUT >       ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image ) 
-		| < PICK >      ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image ) 
+		
+			{if (token_source.activo) {int i=n;
+				if (world.facingWest()) { while(n >0) { world.left();n--; };salida= "Desplazamiento de "+i+" pasos al oeste"; }
+				else if (world.facingEast())  { while(n >0) { world.right();n--; };salida= "Desplazamiento de "+i+" pasos al este"; }
+				else if (world.facingSouth())  { while(n >0) { world.down();n--; };salida= "Desplazamiento de "+i+" pasos al sur"; }
+				else if (world.facingNorth())  { while(n >0) { world.up();n--; }; salida= "Desplazamiento de "+i+" pasos al norte";}
+
+
+			  } }
+		| < PUT >       ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image )
+		  {if (token_source.activo); }
+		| < PICK >      ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image )
+		  {if (token_source.activo); }
 		| < MOVETOTHE > ":" (n = num()|(n = getVarNum()))  "," (d = < VIEW >.image|d= <LEFT>.image  | d=<RIGHT>.image)
+		  {if (token_source.activo); }
 		| < MOVEINDIR > ":" (n = num()|(n = getVarNum()))  "," (d = < ORIENTATION >.image)
+		  {if (token_source.activo); }
 		| < JUMPTOTHE > ":" (n = num()|(n = getVarNum()))  "," (d = < VIEW >.image|d= <LEFT>.image  | d=<RIGHT>.image)
+		  {if (token_source.activo); }
 		| < JUMPINDIR > ":" (n = num()|(n = getVarNum()))  "," (d = < ORIENTATION >.image)
+		  {if (token_source.activo); }
 		| <NOP> ":"
+		  
 	}
 
 void conditionalCall():	
