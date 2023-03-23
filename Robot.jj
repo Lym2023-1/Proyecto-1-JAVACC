@@ -1,0 +1,1069 @@
+/*
+Gramatica para el Robot:
+Autor: Alejandro Arango
+Modificado por: Silvia Takahashi
+Modificado por: Juan Pablo Morales.
+Agregadas producciones para manejar globos
+Modificado por Silvia Takahashi
+
+
+ **/
+
+
+options 
+{
+  
+	LOOKAHEAD=1; 
+	IGNORE_CASE=true;
+	STATIC = false;
+	
+}
+   
+
+PARSER_BEGIN(Robot)
+
+package uniandes.lym.robot.control;
+
+import uniandes.lym.robot.kernel.*;
+import uniandes.lym.robot.view.Console;
+ 
+import java.awt.Point;
+import java.io.*;
+import java.util.Vector;
+import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+
+@SuppressWarnings("serial")
+public class Robot 
+{
+
+
+	private RobotWorldDec world;
+	
+	
+	void setWorld(RobotWorld w) {
+		world = (RobotWorldDec) w;	
+	}
+
+	String salida=new String();
+}
+PARSER_END(Robot)
+
+SKIP:
+{
+	" "
+	|	"\r"
+	|	"\t"
+	| "\n"
+}
+
+TOKEN: /* Nombres de Comandos */
+{
+
+			<MOV:  "Mov">
+		| 	<RIGHT: "RIGHT">
+		| 	<PUT: "Put">
+		| 	<PICK: "Pick">
+		|  < POP: "Pop" >
+		|  <GO: "GO" >
+        |  < HOP:  "HOP" >		
+
+}
+
+TOKEN:
+{
+		<BALLOONS:  "BALLOONS" >
+		|	<CHIPS:     "CHIPS"  >	
+
+}
+
+
+
+TOKEN :
+{
+		<NUM: (<DIGIT>)+ >
+		|  	<#DIGIT: ["0"-"9"] >
+        
+}
+
+
+	//boolean command(uniandes.lym.robot.view.Console sistema) :
+	boolean command(Console sistema):
+	{	
+		
+		int x,y;
+		salida=new String();	
+	}
+
+	
+	{
+		(
+		  main() {salida = "Archivo ";}|(
+		    <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
+		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
+		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
+		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
+		|  <PUT> "("  put() ")"					  			
+		|  <PICK> "(" get()  ")"	
+	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+		) ";" 
+
+		{
+		    try {
+	    			 Thread.sleep(900);
+	    	    } catch (InterruptedException e) {
+	    			        System.err.format("IOException: %s%n", e);
+	    		    }
+	    			 
+			sistema.printOutput(salida);
+			return true;
+		})+
+
+    	| <EOF> {return false;} 
+	}
+
+
+
+
+
+	void put() :
+	{
+		int f=1;	
+	}
+	{
+		( <CHIPS>    "," f=num() {world.putChips(f); salida = "Command:  Put Chips"; })
+		|  	  ( <BALLOONS>   "," f=num() {world.putBalloons(f); salida = "Command:  Put Balloons";})	 
+
+	}
+
+	void get() :
+	{
+		int f=1;	
+	}
+	{
+		( <CHIPS>   "," f=num() {world.pickChips(f);salida = "Command:  Pick chips";})
+		|  	  ( <BALLOONS>   "," f=num() {world.grabBalloons(f);salida="Command:  Pick balloons";})	 
+
+	}
+
+	
+	
+
+	/**
+	 * Unsigned decimal number
+	 * @return the corresponding value of the string
+	 * @error  corresponding value is too large
+	 */
+
+
+
+	TOKEN : /* Nombres de valores comunes para comandos */
+{
+  < ORIENTATION :<NORTH> | <SOUTH>| <EAST>| <WEST> >
+| < LEFT: "left"> 
+| < VIEW :<FRONT> | <BACK> >
+| < AROUND: "around">
+| < #BACK: "back" >
+| < #NORTH: "north" >
+| < #SOUTH: "south" >
+| < #EAST: "east" >
+| < #WEST: "west" >
+| < #FRONT: "front" >
+
+
+}
+
+
+
+TOKEN : /* Nombres de Condiciones */
+
+{
+< FACING: "facing"> 
+|<CANPUT:"canput">
+|<CANPICK:"canpick"> 
+|<CANMOVEINDIR:"canmoveindir">
+|<CANJUMPINDIR:"canjumpindir"> 
+|<CANMOVETOTHE:"canmovetothe"> 
+|<CANJUMPTOTHE:"canjumptothe">
+|<NOT:"not">
+} 
+
+TOKEN : /* Nombres de Comandos grandes */
+{
+  < ASSIGNTO : "assignto" >
+| < GOTO : "goto" >
+| < MOVE : "move" >
+| < TURN : "turn" >
+| < FACE : "face" >
+| < MOVETOTHE : "movetothe" >
+| < JUMPTOTHE : "jumptothe" >
+| < MOVEINDIR : "moveindir" >
+| < JUMPINDIR : "jumpindir" >
+| < NOP : "nop" >
+}
+
+
+
+
+
+
+TOKEN : /* Palabras reservadas*/
+{
+  < ROBOT_R : "robot_r" >
+| < THEN : "then" >
+| < ELSE : "else" >
+| < DO : "do" >
+| < VARS : "vars" >
+| < PROCS : "procs" >
+| < WHILE : "while" >
+| < IF : "if" >
+| < REPEAT : "repeat" >
+}
+
+TOKEN : /* Declaracion para nombres */
+{
+  < NAME :(< LETTER >)(< DIGIT >| < LETTER >)* >
+| < #LETTER : [ "a"-"z", "A"-"Z" ] >
+}
+
+	
+TOKEN_MGR_DECLS : /* centinelas y estructuras de datos para almacenar datos definidos por el usuario*/
+{
+  HashMap < String, Integer > procedimientos = new HashMap < String, Integer > ();
+  HashMap < String, String > procedimientosEjecutables = new HashMap < String, String  > ();
+  HashMap < String, String > variables = new HashMap < String, String > ();
+  HashMap < String, Integer > variables_temporales = new HashMap < String, Integer > ();
+  HashSet < String> condiciones = new HashSet < String> ();
+  HashSet < String> comandos = new HashSet < String> ();
+  ArrayList <String> currentCond = new ArrayList < String> ();
+  String currentProcName ="";
+  boolean ejecutarInstrucciones=false;
+  boolean condicionEstaActiva=true;
+  boolean currentProcDec=true;
+    {
+
+      	//Se guardan todas las condiciones
+	    condiciones.add("facing");condiciones.add("canput");condiciones.add("canpick");condiciones.add("canmoveindir");
+	  	condiciones.add("canjumpindir");condiciones.add("canmovetothe");condiciones.add("canjumptothe");condiciones.add("not");
+
+	  	//Se guardan todos los comandos
+	  	comandos.add("assignto");comandos.add("goto"); comandos.add("move"); comandos.add("turn"); comandos.add("face");
+	  	comandos.add("put"); comandos.add("pick"); comandos.add("movetothe"); comandos.add("moveindir"); comandos.add("jumptothe");
+	  	comandos.add("jumpindir");comandos.add("nop");
+	}
+}
+
+
+
+void main() :
+{}
+{
+  //Funcion principal
+  < ROBOT_R >(vars())?(procs())? {token_source.ejecutarInstrucciones=true;}{System.out.println(token_source.procedimientosEjecutables);} {token_source.currentProcDec=false;}block() 
+}
+
+void vars() :
+{String var1, var2;}
+{
+ 	/* 
+	*Funcion para variables
+	*Agrega a la estructura de datos correspondiente las variables con un valor indefinido
+	*Se cosidera incorrecto invocar VARS y no crear variables
+ 	*/
+	  < VARS > var1 = < NAME >.image{token_source.variables.put(var1, "Undefined");}  //Una sola variable
+	  ("," var2 = < NAME >.image{token_source.variables.put(var2, "Undefined");})*";" //Variables adicionales 
+}
+
+void procs() :
+{}
+{
+ 	/* 
+  	*Funcion para procedimientos
+	*Se cosidera incorrecto invocar PROCS y no crear procedimientos
+ 	*/
+
+  	< PROCS >(procDefinition())+
+}
+
+
+	
+void procDefinition() :
+{String procName;int cantidadParametros;}
+{
+	//Funcion para crear procedimientos
+  {token_source.currentProcDec=true;}
+  procName = < NAME >.image  //Se define el nombre del procedimiento
+  {token_source.currentProcName=procName.toLowerCase(); }
+  {token_source.procedimientosEjecutables.put(procName.toLowerCase(),",");}
+  "[" "|" cantidadParametros = parameters() {saveProcInfo(procName.toLowerCase(), cantidadParametros);}"|" //Se guarda el proc luego de contar sus parametros
+		
+{for (String key : token_source.variables_temporales.keySet()) {
+	
+	  String aux = token_source.procedimientosEjecutables.get(procName.toLowerCase());
+	  token_source.procedimientosEjecutables.put(procName.toLowerCase(),aux+key+","); }}
+
+	  {String aux = token_source.procedimientosEjecutables.get(procName.toLowerCase());token_source.procedimientosEjecutables.put(procName.toLowerCase(),aux+"|"); }
+  multipleExecution() //Se realizan multiples llamados a comandos y procedimientos
+  
+  {token_source.variables_temporales = new HashMap < String,Integer > ();}"]"  //se eliminan los parametros que fueron usados por la función
+  {token_source.currentProcDec=false;}
+  {token_source.currentProcName=""; }
+}
+
+int parameters() :
+{String parameter1, parameter2;}
+{
+   	/* 
+	  *Se revisa la estructura de los parametros y se cuenta la cantidad
+	  *Puede que un procedimiento no tenga parametros
+	  *Se guardan los parametros como variables temporales, ya que no nos interesa su valor, se guarda como 0
+ 	*/
+
+	  
+	  ( parameter1 = < NAME >.image       {token_source.variables_temporales.put(parameter1,0);} //Se guarda un parametro
+	  ("," parameter2 = < NAME >.image    {token_source.variables_temporales.put(parameter2,0);})*)? //se guardan los demas parametros
+	  
+	  {return token_source.variables_temporales.size();} //Se retorna el numero total de parametros del procedimiento	
+}
+
+void saveProcInfo(String procName, int params) :
+{}
+	
+{
+  //Se guarda el nombre del procedimiento y se revisa que no sea variable ni condicion
+  {
+			if (token_source.variables.containsKey(procName))throw new Error("El procedimiento ya se declaró como variable");
+			else if (token_source.condiciones.contains(procName))throw new Error("El procedimiento es una condición");
+			else token_source.procedimientos.put(procName,params);
+  }
+}
+
+
+
+void block() :
+{}
+{
+    /* 
+	  *Definicion de bloque de instrucciones
+	  *Pueden ser una o mas instrucciones entre []
+	  *O puede ser una sola instruccion
+ 	*/
+  ("[" multipleExecution() "]") |(singleExecution())
+}
+
+
+	
+void multipleExecution() :
+{}
+	
+{
+  //Una o mas instrucciones
+  singleExecution()(";" singleExecution())*
+}
+
+
+void singleExecution() :
+{}
+{
+  
+  //una instruccion puede ser un comando, un procedimiento o una estructura de control
+  controlStructure()|declaredProcedureCall()| procedureCall()
+}
+	
+void procedureCall() :
+{String procName;ArrayList<String> parametros;}
+{
+     /* 
+	  *Se llama un procedimiento del usuario
+	  *Se comprueba que el nombre este definido y tenga la cantidad justa de parametros
+ 	*/
+	  procName = < NAME >.image ":" parametros = declaredParameters()
+ 
+	  {
+	    if (token_source.procedimientos.containsKey(procName.toLowerCase()) == false) throw new Error("El procedimiento " + procName + " no esta definido " + token.beginLine);
+	    else if (token_source.procedimientos.get(procName.toLowerCase()) != Integer.parseInt(parametros.get(0))) throw new Error("Faltan o sobran parametros al llamar al procedimiento: " + procName);
+	  }
+		{
+		  if (token_source.ejecutarInstrucciones) {
+		    String cadenaParametros="";
+			for (int i=1;i<parametros.size();i++) {cadenaParametros+= parametros.get(i)+",";}
+			run(procName,cadenaParametros.split(",")); }
+		}
+
+	  
+}
+	
+void controlStructure() :
+{}
+{
+  (IF())|(WHILE())|(REPEAT())
+}
+
+
+
+ArrayList<String>  declaredParameters() :
+{int cantidad = 0;String parameter1, parameter2;ArrayList<String>resultado= new ArrayList<String>();}
+	//Se revisa que los parametros esten definidos o que sean numeros y se retorna la cantidad
+{
+  	{resultado.add(Integer.toString(cantidad)); }
+ 	(((parameter1 = < NAME >.image {checkParameters(parameter1.toLowerCase());})| parameter1= <NUM>.image){resultado.add(parameter1); cantidad++; } //para un parametro
+ 	("," ((parameter2 = < NAME >.image{checkParameters(parameter2.toLowerCase());})|parameter2=<NUM>.image) {resultado.add(parameter1); cantidad++;})*)? // para los parametros
+
+	{resultado.set(0,Integer.toString(cantidad));
+	  return resultado;}
+}
+
+
+void checkParameters(String parameter) :
+{}
+{
+  {
+    //Se revisa si un parametro esta definido o si es variable
+    if (token_source.variables.containsKey(parameter) == false && 
+    token_source.variables_temporales.containsKey(parameter) == false) throw new Error(parameter + " no esta definido" + token_source.variables_temporales);
+  }
+}
+
+
+void IF() :
+{}
+{
+  	//condicional if then else, los tres deben aparecer para considerarse correcto
+ 	< IF > ":" token_source.condicionEstaActiva=conditionalCall() 
+	{if (token_source.currentProcDec) {
+		String aux = token_source.procedimientosEjecutables.get(token_source.currentProcName);
+	  	token_source.procedimientosEjecutables.put(token_source.currentProcName,aux+"if-");
+	  	String aux3 = token_source.procedimientosEjecutables.get(token_source.currentProcName);
+	  	String condName = token_source.currentCond.get(0);
+	  	token_source.procedimientosEjecutables.put(token_source.currentProcName,aux3+condName+"+"+",");
+	  	
+	  	
+		for (int i=1;i<token_source.currentCond.size();i++) {String aux2 = token_source.procedimientosEjecutables.get(token_source.currentProcName);token_source.procedimientosEjecutables.put(token_source.currentProcName,aux2+token_source.currentCond.get(i)+","); }
+	   }}
+
+	   {
+	     String aux4 = token_source.procedimientosEjecutables.get(token_source.currentProcName);
+	  	token_source.procedimientosEjecutables.put(token_source.currentProcName,aux4+"*");
+	   }
+	 {token_source.currentCond = new ArrayList<String >();}
+
+	 < THEN >":" block() { token_source.condicionEstaActiva=!token_source.condicionEstaActiva;}< ELSE >":" block(){ token_source.condicionEstaActiva=true;}
+
+	 
+}
+
+void WHILE() :
+{}
+{
+    //Gramatica del ciclo while
+ 	< WHILE > ":" conditionalCall() < DO > 
+	{if (token_source.currentProcDec) {
+		String aux = token_source.procedimientosEjecutables.get(token_source.currentProcName);
+	  	token_source.procedimientosEjecutables.put(token_source.currentProcName,aux+"while-");
+	  	String aux3 = token_source.procedimientosEjecutables.get(token_source.currentProcName);
+	  	String condName = token_source.currentCond.get(0);
+	  	token_source.procedimientosEjecutables.put(token_source.currentProcName,aux3+condName+"+"+",");
+	  	
+	  	
+		for (int i=1;i<token_source.currentCond.size();i++) {String aux2 = token_source.procedimientosEjecutables.get(token_source.currentProcName);token_source.procedimientosEjecutables.put(token_source.currentProcName,aux2+token_source.currentCond.get(i)+","); }
+	   }}
+
+	   {
+	     String aux4 = token_source.procedimientosEjecutables.get(token_source.currentProcName);
+	  	token_source.procedimientosEjecutables.put(token_source.currentProcName,aux4+"*");
+	   }
+	 {token_source.currentCond = new ArrayList<String >();}
+
+
+	 ":" block()
+}
+
+
+void REPEAT() :
+{int num;}
+{
+  //Gramatica para repeat, admite numeros y variables
+  < REPEAT > ":"(num = num()|(num = getVarNum())) block()
+}
+
+
+
+void declaredProcedureCall() :
+{String procName ="";ArrayList<String>param=new ArrayList<String>();int n, Cx, Cy;String d, x, name, o;}
+	{
+		//comandos
+		//(n = num()|(n = getVarNum())) se usa para guardar en n un numero, o el valor de una variable
+
+	  	
+		  (		    procName=< ASSIGNTO >.image ":" n = num() "," name = < NAME >.image
+		  {param.add(Integer.toString(n));param.add(name);checkParameters(name.toLowerCase());}
+		  {if (token_source.ejecutarInstrucciones&& token_source.variables.containsKey(name)) assignTo(n,name); }
+		| procName=< TURN >.image      ":" (d = < AROUND >.image | d= <LEFT>.image  | d=<RIGHT>.image )
+		{param.add(d);}
+		  {if (token_source.ejecutarInstrucciones) {turn(d);}}
+		| procName=< FACE >.image      ":" (o = < ORIENTATION >.image)
+		  {param.add(o); }
+		  {if (token_source.ejecutarInstrucciones && token_source.condicionEstaActiva) {face(o);} }
+		| procName=< GOTO >.image	    ":" (Cx = num()|(Cx = getVarNum()))","(Cy = num()|(Cy = getVarNum()))
+			{param.add(Integer.toString(Cx));param.add(Integer.toString(Cy));}
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) goTo(Cx,Cy); }
+		| procName=< MOVE >.image 	    ":" (n = num()|(n = getVarNum())) {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva)move(n);}
+		{param.add(Integer.toString(n));}
+		| procName=< PUT >.image       ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image )
+		{param.add(Integer.toString(n));param.add(x);}
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) {putR(n,x);} }
+		| procName=< PICK >.image      ":" (n = num()|(n = getVarNum()))  "," (x=<BALLOONS>.image|x=<CHIPS>.image )
+			{param.add(Integer.toString(n));param.add(x);}
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) {pickR(n,x);} }
+		| procName=< MOVETOTHE >.image ":" (n = num()|(n = getVarNum()))  "," (d = < VIEW >.image|d= <LEFT>.image  | d=<RIGHT>.image)
+			{param.add(Integer.toString(n));param.add(d);}
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) { moveTo(n,d);} }
+		| procName=< MOVEINDIR >.image ":" (n = num()|(n = getVarNum()))  "," (d = < ORIENTATION >.image)
+			{param.add(Integer.toString(n));param.add(d);}
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) { moveDir(n,d);} }
+		| procName=< JUMPTOTHE >.image ":" (n = num()|(n = getVarNum()))  "," (d = < VIEW >.image|d= <LEFT>.image  | d=<RIGHT>.image)
+			{param.add(Integer.toString(n));param.add(d);}
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) {jumpTo(n,d);} }
+		| procName=< JUMPINDIR >.image ":" (n = num()|(n = getVarNum()))  "," (d = < ORIENTATION >.image)
+			{param.add(Integer.toString(n));param.add(d);}
+		  {if (token_source.ejecutarInstrucciones&& token_source.condicionEstaActiva) {jumpDir(n,d);}}
+		| procName=<NOP>.image ":")
+
+			  {if (token_source.currentProcDec) {
+
+
+				  String aux = token_source.procedimientosEjecutables.get(token_source.currentProcName);
+				  
+				  token_source.procedimientosEjecutables.put(token_source.currentProcName,aux+procName+"-,");
+				  
+					for (int i=0;i<param.size();i++) {String aux2 = token_source.procedimientosEjecutables.get(token_source.currentProcName);token_source.procedimientosEjecutables.put(token_source.currentProcName,aux2+param.get(i)+","); }
+				   }}
+				   {	  String aux3 = token_source.procedimientosEjecutables.get(token_source.currentProcName);
+				  token_source.procedimientosEjecutables.put(token_source.currentProcName,aux3+procName+"/"); } 
+					
+				}
+
+boolean  conditionalCall():	
+{String condName =""; int n; String x,d,o;Boolean ans=false; int xPos=(int)world.getPosition().getX();int yPos = (int)world.getPosition().getY();}
+	
+	{ {token_source.currentCond.add(""); }
+		(condName=< FACING >.image 		":" o=<ORIENTATION>.image{token_source.currentCond.set(0,condName.toLowerCase());token_source.currentCond.add(o); ans=facing(o);salida= "Se ha comprobado facing "; return ans;}
+		|condName=<CANPUT>.image 		":" (n=num()|(n=getVarNum())) "," (x=<BALLOONS>.image|x=<CHIPS>.image )
+		{ return false;}
+		|condName=<CANPICK>.image 		":" (n=num()|(n=getVarNum())) "," (x=<BALLOONS>.image|x=<CHIPS>.image )
+		{ return false;}
+		|condName=<CANMOVEINDIR>.image ":" (n=num()|(n=getVarNum())) ","  d=<ORIENTATION>.image{token_source.currentCond.set(0,condName.toLowerCase());token_source.currentCond.add(Integer.toString(n));token_source.currentCond.add(d); ans=canMoveDir(n,d,xPos,yPos);salida= "Se ha comprobado si se puede avanzar en dir ";return ans;}
+		|condName=<CANJUMPINDIR>.image ":" (n=num()|(n=getVarNum())) ","  d=<ORIENTATION>.image{token_source.currentCond.set(0,condName.toLowerCase());token_source.currentCond.add(Integer.toString(n)); ans=facing(d);ans= canJumpDir(n,d,xPos,yPos);salida= "Es posible saltar en dir "; return ans;}
+		|condName=<CANMOVETOTHE>.image ":" (n=num()|(n=getVarNum())) "," (o = < VIEW >.image|o= <LEFT>.image  | o=<RIGHT>.image){token_source.currentCond.set(0,condName.toLowerCase());token_source.currentCond.add(Integer.toString(n));token_source.currentCond.add(o); ans=facing(o); ans= canMoveTo(n,o,xPos,yPos);salida= "Se puede avanzar hacia ";return ans;		    } 
+		|condName=<CANJUMPTOTHE>.image ":" (n=num()|(n=getVarNum())) "," (o = < VIEW >.image|o= <LEFT>.image  | o=<RIGHT>.image){token_source.currentCond.set(0,condName.toLowerCase());token_source.currentCond.add(Integer.toString(n));token_source.currentCond.add(o); ans=facing(o);ans=canJumpTo(n,o,xPos,yPos);salida= "Es posible saltar hacia "; return ans;} 
+		
+		|condName=<NOT >.image":" ans=conditionalCall(){token_source.currentCond.set(0,condName.toLowerCase()); token_source.condicionEstaActiva= !token_source.condicionEstaActiva;})
+
+		
+	} 
+
+
+
+
+
+
+
+
+
+
+void move(int n):
+{}
+{
+  
+			{if (token_source.ejecutarInstrucciones) {int i=n;
+				if (world.facingWest()) { while(n >0) { world.left();n--; };salida= "Desplazamiento de "+i+" pasos al oeste"; }
+				else if (world.facingEast())  { while(n >0) { world.right();n--; };salida= "Desplazamiento de "+i+" pasos al este"; }
+				else if (world.facingSouth())  { while(n >0) { world.down();n--; };salida= "Desplazamiento de "+i+" pasos al sur"; }
+				else if (world.facingNorth())  { while(n >0) { world.up();n--; }; salida= "Desplazamiento de "+i+" pasos al norte";} } }
+}
+
+void goTo(int Cx,int Cy):
+{}
+{
+	{world.setPostion(Cx,Cy); }
+}
+   
+
+
+void assignTo(int n, String name):
+{}
+{
+ { token_source.variables.put(name, Integer.toString(n)) ;}
+}
+
+
+
+void turn (String d):
+{}
+{
+	{if (d.equals("right")) { world.turnRight();salida= "Giro a la derecha"; }
+				else if (d.equals("left")) { world.turnRight();world.turnRight();world.turnRight();salida= "Giro a la izquierda"; }
+				else if (d.equals("around")) { world.turnRight();world.turnRight();salida= "Giro doble"; }}
+}
+
+
+void face (String o):
+{ }
+
+{
+{
+		    int direction=0;
+			if (o.equals("north"))direction=0;
+			else if (o.equals("south"))direction=1;
+			else if (o.equals("east"))direction=2;
+			else if (o.equals("west"))direction=3;
+			while (world.getFacing()!=direction) { world.turnRight();}
+			salida= "La orientacion actual es: "+o; 
+			
+}
+
+}
+
+void putR (int n,String x):
+{}
+{
+  {
+				if (x.equals("balloons")) { while(n >0) { world.putBalloon();n--; }; }
+				else if (x.equals("chips")) { while(n >0) { world.putChip();n--; }; }
+  }
+}
+
+void pickR(int n,String x):
+
+{}
+{
+  {
+	if (x.equals("balloons")) { while(n >0) { world.pickupBalloon();n--; }; }
+					else if (x.equals("chips")) { while(n >0) { world.pickupChip();n--; }; }
+  }
+}
+
+
+void moveTo(int n, String d):
+{ }
+{
+  {
+				if (d.equals("front")) {
+					if (world.getFacing()==0) {  while(n >0) { world.up();n--; }; }   
+					else if (world.getFacing()==1) {  while(n >0) { world.down();n--; }; }   
+					else if (world.getFacing()==2) {  while(n >0) { world.left();n--; }; }   
+					else if (world.getFacing()==3) {  while(n >0) { world.right();n--; }; } }   
+
+				else if (d.equals("left")) { 
+					if (world.getFacing()==0) {  while(n >0) { world.left();n--; }; }   
+					else if (world.getFacing()==1) {  while(n >0) { world.right();n--; }; }   
+					else if (world.getFacing()==2) {  while(n >0) { world.up();n--; }; }   
+					else if (world.getFacing()==3) {  while(n >0) { world.down();n--; }; } }
+
+				
+				else if (d.equals("right")) { 
+					if (world.getFacing()==0) {  while(n >0) { world.right();n--; }; }   
+					else if (world.getFacing()==1) {  while(n >0) { world.left();n--; }; }   
+					else if (world.getFacing()==2) {  while(n >0) { world.down();n--; }; }   
+					else if (world.getFacing()==3) {  while(n >0) { world.up();n--; }; } }
+				
+				else if (d.equals("back")) { 
+					if (world.getFacing()==0) {  while(n >0) { world.down();n--; }; }   
+					else if (world.getFacing()==1) {  while(n >0) { world.up();n--; }; }   
+					else if (world.getFacing()==2) {  while(n >0) { world.left();n--; }; }      
+					else if (world.getFacing()==3) {  while(n >0) { world.right();n--; }; }}   
+				
+				
+				
+				salida= "Se ha avanzado hacia la direccion deseada "; 
+  }
+}
+
+
+void moveDir(int n,String d):
+{ }
+{
+  {
+		int facing=0;
+		if (d.equals("north")) { facing=0;}
+		else if (d.equals("south")) { facing=1; }
+		else if (d.equals("east")) { facing=2; }
+		else if (d.equals("west")) { facing=3; }
+		while (world.getFacing()!=facing) { world.turnRight();}
+		move(n);
+		salida= "Se ha avanzado en la direccion "; 
+  }
+}
+
+
+
+void jumpDir(int n, String d):
+{}
+{
+  {
+				int direction=0;
+				int xPos = (int)world.getPosition().getX();
+				int yPos = (int)world.getPosition().getY();
+				if (d.equals("north")) { direction=0; world.setPostion(xPos,yPos-n); }
+				else if (d.equals("south")) { direction=1;world.setPostion(xPos,yPos+n); }
+				else if (d.equals("east")) { direction=2;world.setPostion(xPos+n,yPos); }
+				else if (d.equals("west")) { direction=3;world.setPostion(xPos-n,yPos); }
+				while (world.getFacing()!=direction) { world.turnRight();}
+				
+				
+				salida= "Se ha saltado "; 
+
+  }
+}
+
+void nop():
+{ }
+{
+  {
+	System.out.println("se ha ejecutado nop");
+  }
+}
+
+
+
+void jumpTo(int n, String d):
+{ }
+{
+  {
+				int xPos = (int)world.getPosition().getX();
+				int yPos = (int)world.getPosition().getY();
+				if (d.equals("front")) {
+					if (world.getFacing()==0)world.setPostion(xPos,yPos-n);
+					else if (world.getFacing()==1)world.setPostion(xPos,yPos+n);
+					else if (world.getFacing()==2)world.setPostion(xPos+n,yPos);
+					else if (world.getFacing()==3)world.setPostion(xPos-n,yPos); }
+
+				else if (d.equals("left")) { 
+					if (world.getFacing()==0)world.setPostion(xPos-n,yPos);
+					else if (world.getFacing()==1)world.setPostion(xPos+n,yPos);
+					else if (world.getFacing()==2)world.setPostion(xPos,yPos-n);
+					else if (world.getFacing()==3)world.setPostion(xPos,yPos+n); }
+
+				
+				else if (d.equals("right")) { 
+					if (world.getFacing()==0)world.setPostion(xPos+n,yPos);
+					else if (world.getFacing()==1)world.setPostion(xPos-n,yPos);
+					else if (world.getFacing()==2)world.setPostion(xPos,yPos+n);
+					else if (world.getFacing()==3)world.setPostion(xPos,yPos-n); }
+				
+				else if (d.equals("back")) { 
+					if (world.getFacing()==0)world.setPostion(xPos,yPos+n);
+					else if (world.getFacing()==1)world.setPostion(xPos,yPos-n);
+					else if (world.getFacing()==2)world.setPostion(xPos-n,yPos);
+					else if (world.getFacing()==3)world.setPostion(xPos+n,yPos); }
+				
+				
+				
+				salida= "Se ha saltado "; 
+  }
+}
+
+
+int num() throws Error :
+{	int total = 1;}
+{
+  < NUM >
+  {
+    try{
+      total = Integer.parseInt(token.image);
+      }
+    catch (NumberFormatException ee){
+      throw new Error("No es posible convertir en numero: " + token.image + " !!");
+    }
+    
+  }
+  {return total;}
+}
+
+
+Boolean facing(String o):
+{}
+{
+  {
+    boolean ans =false;	
+	if (world.getFacing()==0 && o.equals("north"))return true;
+	else if (world.getFacing()==1 && o.equals("south"))return true;
+	else if (world.getFacing()==2 && o.equals("east"))return true;
+	else if (world.getFacing()==3 && o.equals("west"))return true;		
+	return ans;
+  }
+}
+
+Boolean canPut(int n, String x):
+{}
+{
+  {
+	boolean ans =false;	
+	return ans;
+  }
+}
+
+Boolean canPick(int n, String x):
+{}
+{
+  {
+	boolean ans =false;	
+	return ans;
+  }
+}
+
+Boolean canMoveDir(int n, String d,int xPos, int yPos):
+{}
+{
+  {
+    			boolean ans =false;	
+				if (d.equals("north")) { ans=world.blockedInRange(xPos, yPos, n, 0);}
+				else if (d.equals("south")) { ans=world.blockedInRange(xPos, yPos, n, 1); }
+				else if (d.equals("east")) { ans=world.blockedInRange(xPos, yPos, n, 2); }
+				else if (d.equals("west")) { ans=world.blockedInRange(xPos, yPos, n, 3); }
+				return ans;
+  }
+}
+
+Boolean canJumpDir(int n, String d,int xPos, int yPos):
+{}
+{
+  {
+    			boolean ans =false;	
+				if (d.equals("north")) {  ans=world.isBlocked(new Point(xPos,yPos-n));} 
+				else if (d.equals("south")){ans=world.isBlocked(new Point(xPos,yPos+n)); }
+				else if (d.equals("east")) {ans=world.isBlocked(new Point(xPos+n,yPos));}
+				else if (d.equals("west")) {ans=world.isBlocked(new Point(xPos-n,yPos));}
+				return ans;
+  }
+}
+
+
+Boolean canMoveTo(int n, String o,int xPos, int yPos):
+{}
+{
+  {
+    				boolean ans =false;	
+					if (o.equals("front")) {
+						if (world.getFacing()==0) {  ans=world.blockedInRange(xPos, yPos, n, 0); }    
+						else if (world.getFacing()==1) {   ans=world.blockedInRange(xPos, yPos, n, 1); }     
+						else if (world.getFacing()==2) {   ans=world.blockedInRange(xPos, yPos, n, 3); }   
+						else if (world.getFacing()==3) {   ans=world.blockedInRange(xPos, yPos, n, 2); } }   
+	
+					else if (o.equals("left")) { 
+						if (world.getFacing()==0) {   ans=world.blockedInRange(xPos, yPos, n, 3); }  
+						else if (world.getFacing()==1) {   ans=world.blockedInRange(xPos, yPos, n, 2); }   
+						else if (world.getFacing()==2) {   ans=world.blockedInRange(xPos, yPos, n, 0); }  
+						else if (world.getFacing()==3) {   ans=world.blockedInRange(xPos, yPos, n, 1); } }
+	
+					
+					else if (o.equals("right")) { 
+						if (world.getFacing()==0) {   ans=world.blockedInRange(xPos, yPos, n, 2); }   
+						else if (world.getFacing()==1) {   ans=world.blockedInRange(xPos, yPos, n, 3); }
+						else if (world.getFacing()==2) {   ans=world.blockedInRange(xPos, yPos, n, 1); }  
+						else if (world.getFacing()==3) {   ans=world.blockedInRange(xPos, yPos, n, 0); } }
+					
+					else if (o.equals("back")) { 
+						if (world.getFacing()==0) {   ans=world.blockedInRange(xPos, yPos, n, 1); }   
+						else if (world.getFacing()==1) {   ans=world.blockedInRange(xPos, yPos, n, 0); }
+						else if (world.getFacing()==2) {   ans=world.blockedInRange(xPos, yPos, n, 3); }      
+						else if (world.getFacing()==3) {   ans=world.blockedInRange(xPos, yPos, n, 2); } }
+
+					return ans;
+  }
+}
+
+
+boolean canJumpTo(int n, String o, int xPos, int yPos):
+{}
+{
+  {
+				boolean ans =false;
+			
+				if (o.equals("front")) {
+					if (world.getFacing()==0)ans=world.isBlocked(new Point(xPos,yPos-n));
+					else if (world.getFacing()==1)ans=world.isBlocked(new Point(xPos,yPos+n));
+					else if (world.getFacing()==2)ans=world.isBlocked(new Point(xPos+n,yPos));
+					else if (world.getFacing()==3)ans=world.isBlocked(new Point(xPos-n,yPos)); }
+
+				else if (o.equals("left")) { 
+					if (world.getFacing()==0)ans=world.isBlocked(new Point(xPos-n,yPos));
+					else if (world.getFacing()==1)ans=world.isBlocked(new Point(xPos+n,yPos));
+					else if (world.getFacing()==2)ans=world.isBlocked(new Point(xPos,yPos-n));
+					else if (world.getFacing()==3)ans=world.isBlocked(new Point(xPos,yPos+n)); }
+
+				
+				else if (o.equals("right")) { 
+					if (world.getFacing()==0)ans=world.isBlocked(new Point(xPos+n,yPos));
+					else if (world.getFacing()==1)ans=world.isBlocked(new Point(xPos-n,yPos));
+					else if (world.getFacing()==2)ans=world.isBlocked(new Point(xPos,yPos+n));
+					else if (world.getFacing()==3)ans=world.isBlocked(new Point(xPos,yPos-n)); }
+				
+				else if (o.equals("back")) { 
+					if (world.getFacing()==0)ans=world.isBlocked(new Point(xPos,yPos+n));
+					else if (world.getFacing()==1)ans=world.isBlocked(new Point(xPos,yPos-n));
+					else if (world.getFacing()==2)ans=world.isBlocked(new Point(xPos-n,yPos));
+					else if (world.getFacing()==3)ans=world.isBlocked(new Point(xPos+n,yPos)); }
+				
+				
+				return ans;
+  }
+}
+
+void not():
+{}
+{
+  {
+
+  }
+}
+
+
+
+int getVarNum() throws Error :
+{Token token;int number;}
+{
+  (token = < NAME >)
+  {
+    //Se revisa si existe la variable
+    checkParameters(token.image.toLowerCase());
+
+    try{
+	  if (token_source.variables.containsKey(token.image.toLowerCase())) number = Integer.parseInt(token_source.variables.get(token.image.toLowerCase()));
+	  else number = token_source.variables_temporales.get(token.image.toLowerCase()); 
+    }
+    catch (NumberFormatException ee){
+      throw new Error("Variable con valor undefined" + token.beginLine + token_source.variables + token.image + token_source.variables_temporales);
+    }			
+   
+  }
+  { return number;}
+}
+
+
+
+
+void run(String procName,String[] parameters):
+{}
+
+//
+{
+  {
+		if (token_source.procedimientosEjecutables.containsKey(procName))
+		{
+			String cadena=token_source.procedimientosEjecutables.get(procName);
+			String[] parts = cadena.split("|");
+			String[] normalParams= parts[0].split(",");
+			String instructions= parts[1];
+			for (int i=0; i<normalParams.length;i++) { instructions=instructions.replaceAll(","+normalParams[i]+"," , "," +parameters[i]+",");}
+			String[] instrucciones =instructions.split("/");
+			for (int i=0; i<instrucciones.length;i++) {
+
+			   String[] instruccion=instrucciones[i].split("-");
+			   String command=instruccion[0];
+			   if (command.equals("while")) {whileExecution(instruccion[1]);}
+			   else if (command.equals("if")) { ifExecution(instruccion[1]);}
+			   else if (token_source.comandos.contains(command)) {procExecution(procName, instruccion[1].split(",")) ;}
+			   
+			   
+
+
+			   }
+			
+
+			
+		}
+		else {procExecution(procName, parameters);}
+  }
+}
+
+
+
+
+
+
+
+
+
+
+void procExecution(String procName, String[] params):
+{}
+{
+  {
+		if (procName.equals("move")) {int n=Integer.parseInt(params[0]);String d=params[1]; moveTo(n,d) ;}
+		else if (procName.equals("assingto")) {int n=Integer.parseInt(params[0]); String name=params[1]; assignTo(n,name) ;}
+		else if (procName.equals("goto")) {int cx=Integer.parseInt(params[0]);int cy=Integer.parseInt(params[1]); goTo(cx,cy) ;}
+		else if (procName.equals("turn")) {String d=params[0]; turn(d) ;}
+		else if (procName.equals("face")) {String o=params[0]; face(o) ;}
+		else if (procName.equals("put")) { int n=Integer.parseInt(params[0]);String x=params[1];putR(n,x) ;}
+		else if (procName.equals("pick")) {int n=Integer.parseInt(params[0]);String x=params[1]; pickR(n,x) ;}
+		else if (procName.equals("movetothe")) {int n=Integer.parseInt(params[0]); String d=params[1]; moveTo(n,d) ;}
+		else if (procName.equals("moveindir")) {int n=Integer.parseInt(params[0]);String d=params[1]; moveDir(n,d) ;}
+		else if (procName.equals("jumptothe")) {int n=Integer.parseInt(params[0]); String d=params[1]; jumpTo(n,d) ;}
+		else if (procName.equals("jumpindir")) {int n=Integer.parseInt(params[0]); String d=params[1]; jumpDir(n,d) ;}
+		else nop();
+
+
+  }
+}
+
+
+
+void ifExecution(String params):
+{}
+{
+  {
+
+    String[] partesCondicion = params.split("+");
+	String condition = partesCondicion[0];
+	String[] parametrosYBloque = partesCondicion[1].split("*");
+	String[] parametros = parametrosYBloque[0].split(",");
+	String[] instruccionesBloque = parametrosYBloque[1].split("?");
+	if (getCondition(condition,parametros)){for (int i=0; i<instruccionesBloque.length;i++) {run(instruccionesBloque[0], instruccionesBloque[1].split(","));}}
+  }
+}
+
+
+
+void whileExecution(String params):
+{}
+{
+  {
+    String[] partesCondicion = params.split("+");
+	String condition = partesCondicion[0];
+	String[] parametrosYBloque = partesCondicion[1].split("*");
+	String[] parametros = parametrosYBloque[0].split(",");
+	String[] instruccionesBloque = parametrosYBloque[1].split("?");
+	while (getCondition(condition,parametros)){for (int i=0; i<instruccionesBloque.length;i++) {run(instruccionesBloque[0], instruccionesBloque[1].split(","));}}
+  }
+}
+
+
+boolean getCondition(String condicion, String[] parametros):
+{ }
+
+{
+  {
+	if (condicion.equals("facing")) {String o=parametros[0]; facing(o);}
+	//else if (condicion.equals("canput")) { canput();}
+    //else if (condicion.equals("canpick")) { canpick();}
+	else if (condicion.equals("canmoveindir")) {int n=Integer.parseInt(parametros[0]);String d=parametros[1] ;int xPos=(int)world.getPosition().getX();int yPos = (int)world.getPosition().getY(); return canMoveDir(n, d, xPos,  yPos);}
+	else if (condicion.equals("canjumpindir")) {int n=Integer.parseInt(parametros[0]);String d=parametros[1] ;int xPos=(int)world.getPosition().getX();int yPos = (int)world.getPosition().getY(); return canJumpDir(n, d, xPos,  yPos);}
+	else if (condicion.equals("canmovetothe")) {int n=Integer.parseInt(parametros[0]);String d=parametros[1] ;int xPos=(int)world.getPosition().getX();int yPos = (int)world.getPosition().getY(); return canMoveTo(n, d, xPos,  yPos);}
+	else if (condicion.equals("canjumptothe")) { int n=Integer.parseInt(parametros[0]);String d=parametros[1] ;int xPos=(int)world.getPosition().getX();int yPos = (int)world.getPosition().getY(); return canJumpTo(n, d, xPos,  yPos);}
+	else if (condicion.equals("not")) { not();return false;}
+
+ }
+}
+
+
+
+
+
+
+
+
+
+
